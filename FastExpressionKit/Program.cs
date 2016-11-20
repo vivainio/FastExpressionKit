@@ -1,5 +1,7 @@
-﻿using FastExpressionKit;
+﻿using FakePoc;
+using FastExpressionKit;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -68,9 +70,66 @@ namespace ConsoleApplication2
                 var ints = extractor.Extract(c1);
             });
 
+            // big data
+            var big1 = new BigDto();
+            var big2 = new BigDto();
+
+            var bigprops = ReflectionHelper.CollectProps<BigDto>();
+            var bigpropnames = bigprops.SelectMany(p => p.Item2).ToArray();
+
+            RepeatBench("new Differ() for big class", 1000, () =>
+            {
+                var dd = new Differ<BigDto, BigDto>(bigpropnames);
+
+            });
+
+            var bigd = new Differ<BigDto, BigDto>(bigpropnames);
+            RepeatBench("Compare large objects", 1000, () =>
+            {
+                bigd.Compare(big1, big2);
+            });
+
+            var types = ReflectionHelper.CollectProps<BigDto>();
+            var e4 = ReflectionHelper.GetExtractorFor<BigDto, int>(types);
+            var e5 = ReflectionHelper.GetExtractorFor<BigDto, string>(types);
+            var e6 = ReflectionHelper.GetExtractorFor<BigDto, decimal>(types);
+
+            RepeatBench("Extract fields from large object", 10000, () =>
+            {
+                e4.Extract(big1);
+                e5.Extract(big1);
+                e6.Extract(big1);
+            });
+
+            RepeatBench("Extract fields from large object, convert to dict", 10000, () =>
+            {
+                var pd = e4.ResultsAsDict(e4.Extract(big1).Select(i => i.ToString()))
+                       .Union(e5.ResultsAsDict(e5.Extract(big1).Select(e => e.ToString())))
+                       .Union(e6.ResultsAsDict(e6.Extract(big1).Select(e => e.ToString())));
+            });
+
+            var propertyInfos = typeof(BigDto).GetProperties();
+            RepeatBench("Extract fields with reflection", 10000, () =>
+            {
+                foreach (var p in propertyInfos)
+                {
+                    var val = p.GetValue(big1);
+                }
+            });
+
+            RepeatBench("Extract fields with reflection, convert to string dict", 10000, () =>
+            {
+                var resdict = new Dictionary<string, string>();
+                foreach (var p in propertyInfos)
+                {
+                    var val = p.GetValue(big1);
+                    var s = val.ToString();
+                    resdict[p.Name] = s;
+                }
+            });
+
+
             ReadLine();
-
-
         }
         static void Main(string[] args)
         {
@@ -123,6 +182,8 @@ namespace ConsoleApplication2
 
             tryit(c1);
             tryit(c2);
+
+
             Benchmark();
         }
 
