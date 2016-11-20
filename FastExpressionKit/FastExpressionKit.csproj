@@ -48,7 +48,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>TestDataPocClass.tt</DependentUpon>
     </Compile>
-    <Compile Include="FastObjectDiffer.cs" />
+    <Compile Include="FastExpressionKit.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

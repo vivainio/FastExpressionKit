@@ -77,7 +77,7 @@ namespace ConsoleApplication2
             var bigprops = ReflectionHelper.CollectProps<BigDto>();
             var bigpropnames = bigprops.SelectMany(p => p.Item2).ToArray();
 
-            RepeatBench("new Differ() for big class", 1000, () =>
+            RepeatBench("new Differ() for big class", 100, () =>
             {
                 var dd = new Differ<BigDto, BigDto>(bigpropnames);
 
@@ -94,19 +94,35 @@ namespace ConsoleApplication2
             var e5 = ReflectionHelper.GetExtractorFor<BigDto, string>(types);
             var e6 = ReflectionHelper.GetExtractorFor<BigDto, decimal>(types);
 
+           
             RepeatBench("Extract fields from large object", 10000, () =>
             {
-                e4.Extract(big1);
-                e5.Extract(big1);
-                e6.Extract(big1);
+                var r1 = e4.Extract(big1);
+                var r2 = e5.Extract(big1);
+                var r3 = e6.Extract(big1);
             });
 
-            RepeatBench("Extract fields from large object, convert to dict", 10000, () =>
+
+            RepeatBench("Extract fields from large object, convert to dict, naive", 10000, () =>
             {
-                var pd = e4.ResultsAsDict(e4.Extract(big1).Select(i => i.ToString()))
-                       .Union(e5.ResultsAsDict(e5.Extract(big1).Select(e => e.ToString())))
-                       .Union(e6.ResultsAsDict(e6.Extract(big1).Select(e => e.ToString())));
+                var pd = e4.ResultsAsDict(e4.Extract(big1).Select(i => i.ToString()).ToList())
+                       .Union(e5.ResultsAsDict(e5.Extract(big1).Select(e => e.ToString()).ToList()))
+                       .Union(e6.ResultsAsDict(e6.Extract(big1).Select(e => e.ToString()).ToList()));
             });
+
+            var boxedExtract = new FieldExtract<BigDto, object>(bigpropnames);
+
+            RepeatBench("Extract fields, boxed", 100000, () =>
+            {
+                var r1 = boxedExtract.Extract(big1);
+            });
+
+            RepeatBench("Extract fields from large dto. string -> object dict", 10000, () =>
+            {
+                var r1 = boxedExtract.Extract(big1);
+                var r2 = boxedExtract.ResultsAsDict(r1);
+            });
+
 
             var propertyInfos = typeof(BigDto).GetProperties();
             RepeatBench("Extract fields with reflection", 10000, () =>
@@ -171,13 +187,15 @@ namespace ConsoleApplication2
             var e5 = ReflectionHelper.GetExtractorFor<C, DateTime>(types);
             var e6 = ReflectionHelper.GetExtractorFor<C, DateTime?>(types);
 
+
+
             Action<C> tryit = c =>
             {
                 // smash exctractor results together with conversions to get string
 
-                var pd = e4.ResultsAsDict(e4.Extract(c).Select(i => i.ToString()))
-                    .Union(e5.ResultsAsDict(e5.Extract(c).Select(e => e.ToString())))
-                    .Union(e6.ResultsAsDict(e6.Extract(c).Select(e => e.ToString())));
+                var pd = e4.ResultsAsDict(e4.Extract(c).Select(i => i.ToString()).ToList())
+                    .Union(e5.ResultsAsDict(e5.Extract(c).Select(e => e.ToString()).ToList()))
+                    .Union(e6.ResultsAsDict(e6.Extract(c).Select(e => e.ToString()).ToList()));
             };
 
             tryit(c1);

@@ -45,8 +45,9 @@ namespace FastExpressionKit
         private Func<T1, T2[]> CreateExpression(IEnumerable<string> fields)
         {
             var t1param = EE.Param<T1>("obj");
-            var elist = fields.Select(f => t1param.Dot(f));
-           
+            var elist = fields.Select(f => t1param.Dot(f)).Cast<Expression>();
+            if (typeof(T2) == typeof(object))
+                elist = elist.Select(e => Expression.Convert(e, typeof(object)));
             var resultArr = Expression.NewArrayInit(typeof(T2), elist);
             var l = Expression.Lambda<Func<T1, T2[]>>(resultArr, t1param);
             return l.Compile();
@@ -61,10 +62,16 @@ namespace FastExpressionKit
         public T2[] Extract(T1 obj) => expr.Invoke(obj);
 
         // hits can be any enumerable, as long as it can be zipped with Props
-        public Dictionary<string, TP> ResultsAsDict<TP>(IEnumerable<TP> hits) =>
-            hits
-            .Select((hit, i) => new { hit, i })
-            .ToDictionary(h => Props[h.i], h => h.hit);
+        // 
+        public Dictionary<string, TP> ResultsAsDict<TP>(ICollection<TP> hits)
+        {
+            var d = new Dictionary<string, TP>();
+            for (var i = 0; i < hits.Count; i++)
+            {
+                d[Props[i]] = hits.ElementAt(i);
+            }
+            return d;
+        }
     }
 
     public static class ReflectionHelper
