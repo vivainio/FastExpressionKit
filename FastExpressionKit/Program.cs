@@ -1,7 +1,9 @@
 ﻿using FastExpressionKit;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using static System.Console;
 
 namespace ConsoleApplication2
 {
@@ -17,10 +19,59 @@ namespace ConsoleApplication2
         public int a { get; set; }
         public int b { get; set; }
         public int c { get; set; }
+        public DateTime date { get; set; }
+        public DateTime? mynullable { get; set; }
+
     }
-    
+
     class Program
     {
+        static void RepeatBench(string description, int n, Action action)
+        {
+            var sw = Stopwatch.StartNew();
+            for (var i = 0; i < n; i++)
+            {
+                action();
+            }
+            WriteLine("{0}: {1}", description, (sw.ElapsedMilliseconds * 1000) / (float) n);
+
+        }
+        static void Benchmark()
+        {
+            var c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now };
+            var d1 = new D() { a = 666, b = 8, c = 9, date = DateTime.Now, mynullable = DateTime.Now };
+
+            var fields = new[] { "a", "b" };
+
+
+            WriteLine("Stats (microseconds) per iteration");
+
+            RepeatBench("new Differ()", 1000, () =>
+            {
+                var dd = new Differ<C, D>(fields);
+            });
+
+            var d = new Differ<C, D>(fields);
+
+            RepeatBench("Compare small objects", 1000000, () =>
+            {
+                var res = d.Compare(c1, d1);
+            });
+            RepeatBench("new FieldExtract()", 1000, () =>
+            {
+                var dd = new FieldExtract<C, int>(fields);
+            });
+            var extractor = new FieldExtract<C, int>(fields);
+
+            RepeatBench("Extract integers", 1000000, () =>
+            {
+                var ints = extractor.Extract(c1);
+            });
+
+            ReadLine();
+
+
+        }
         static void Main(string[] args)
         {
             // demo data
@@ -72,7 +123,7 @@ namespace ConsoleApplication2
 
             tryit(c1);
             tryit(c2);
-
+            Benchmark();
         }
 
     }
