@@ -13,9 +13,9 @@ namespace FastExpressionKit
         public static Expression IsEq(this Expression left, Expression right) => Expression.Equal(left, right);
     }
 
-    public class FastObjectDiffer<T1, T2>
+    public class Differ<T1, T2>
     {
-        public readonly String[] Props;
+        public readonly string[] Props;
         private readonly Func<T1, T2, bool[]> comparisonFunc;
         private Func<T1, T2, bool[]> CreateExpression(IEnumerable<string> fields)
         {
@@ -27,7 +27,8 @@ namespace FastExpressionKit
             var l = Expression.Lambda<Func<T1, T2, bool[]>>(resultArr, t1param, t2param);
             return l.Compile();
         }
-        public FastObjectDiffer(string[] props)
+
+        public Differ(string[] props)
         {
             this.Props = props;
             this.comparisonFunc = CreateExpression(props);
@@ -35,4 +36,53 @@ namespace FastExpressionKit
 
         public bool[] Compare(T1 left, T2 right) => comparisonFunc.Invoke(left, right);
     }
+
+    public class FieldExtract<T1, T2>
+    {
+        public readonly string[] Props;
+        private readonly Func<T1, T2[]> expr;
+
+        private Func<T1, T2[]> CreateExpression(IEnumerable<string> fields)
+        {
+            var t1param = EE.Param<T1>("obj");
+            var elist = fields.Select(f => t1param.Dot(f));
+           
+            var resultArr = Expression.NewArrayInit(typeof(T2), elist);
+            var l = Expression.Lambda<Func<T1, T2[]>>(resultArr, t1param);
+            return l.Compile();
+        }
+
+        public FieldExtract(string[] props)
+        {
+            this.Props = props;
+            this.expr = CreateExpression(props);
+        }
+
+        public T2[] Extract(T1 obj) => expr.Invoke(obj);
+
+        // hits can be any enumerable, as long as it can be zipped with Props
+        public Dictionary<string, TP> ResultsAsDict<TP>(IEnumerable<TP> hits) =>
+            hits
+            .Select((hit, i) => new { hit, i })
+            .ToDictionary(h => Props[h.i], h => h.hit);
+    }
+
+    public static class ReflectionHelper
+    {
+        // create cache for GetExtractorFor by reflecting on object
+        public static IEnumerable<Tuple<Type, string[]>> CollectProps<T>() =>
+            typeof(T).GetProperties()
+                .GroupBy(prop => prop.PropertyType)
+                .Select(g => Tuple.Create(g.Key, g.Select(pi => pi.Name).ToArray()));
+
+        public static FieldExtract<T1, T2> GetExtractorFor<T1,T2>(IEnumerable<Tuple<Type, string[]>> propsCollection)
+        {
+            var proplist = propsCollection.First(el => el.Item1 == typeof(T2));
+            if (proplist == null)
+                return null;
+            return new FieldExtract<T1, T2>(proplist.Item2);
+        }
+
+    }
+
 }
