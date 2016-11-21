@@ -84,7 +84,7 @@ namespace ConsoleApplication2
             });
 
             var bigd = new Differ<BigDto, BigDto>(bigpropnames);
-            RepeatBench("Compare large objects", 1000, () =>
+            RepeatBench("Compare large objects", 10000, () =>
             {
                 bigd.Compare(big1, big2);
             });
@@ -145,6 +145,12 @@ namespace ConsoleApplication2
             });
 
 
+            var copier = new FieldCopier<BigDto, BigDto>(bigpropnames);
+            RepeatBench("Copy big object", 10000, () =>
+            {
+                copier.Copy(big1, big2);
+            });
+
             ReadLine();
         }
         static void Main(string[] args)
@@ -200,7 +206,10 @@ namespace ConsoleApplication2
 
             tryit(c1);
             tryit(c2);
-
+            c1.a = 111;
+            c1.b = 999;
+            var copier = new FieldCopier<C, C>(fields);
+            copier.Copy(c1, c2);
 
             Benchmark();
         }

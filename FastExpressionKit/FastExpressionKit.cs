@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FastExpressionKit
 {
@@ -35,6 +36,31 @@ namespace FastExpressionKit
         }
 
         public bool[] Compare(T1 left, T2 right) => comparisonFunc.Invoke(left, right);
+    }
+
+    public class FieldCopier<TTarget, TSrc>
+    {
+        public readonly string[] Props;
+        private readonly Action<TTarget, TSrc> assignExpr;
+        private Action<TTarget, TSrc> CreateExpression(IEnumerable<string> fields)
+        {
+            var t1param = EE.Param<TTarget>("left");
+            var t2param = EE.Param<TSrc>("right");
+
+            var assignList = fields.Select(f => Expression.Assign(t1param.Dot(f), t2param.Dot(f)));
+            //var resultArr = Expression.NewArrayInit(typeof(bool), cmplist);
+            var block = Expression.Block(assignList);
+            var l = Expression.Lambda<Action<TTarget, TSrc>>(block, t1param, t2param);
+            return l.Compile();
+        }
+
+        public FieldCopier(string[] props)
+        {
+            this.Props = props;
+            this.assignExpr = CreateExpression(props);
+        }
+
+        public void Copy(TTarget left, TSrc right) => assignExpr.Invoke(left, right);
     }
 
     public class FieldExtract<T1, T2>
@@ -84,11 +110,16 @@ namespace FastExpressionKit
     public static class ReflectionHelper
     {
         // create cache for GetExtractorFor by reflecting on object
+        public static PropertyInfo[] GetProps<T>() => typeof(T)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public);
+
+        public static string[] PropNames<T>() => GetProps<T>().Select(p => p.Name).ToArray();
         public static IEnumerable<Tuple<Type, string[]>> CollectProps<T>() =>
-            typeof(T).GetProperties()
+                GetProps<T>()
                 .GroupBy(prop => prop.PropertyType)
                 .Select(g => Tuple.Create(g.Key, g.Select(pi => pi.Name).ToArray()));
 
+        // use after CollectProps
         public static FieldExtract<T1, T2> GetExtractorFor<T1,T2>(IEnumerable<Tuple<Type, string[]>> propsCollection)
         {
             var proplist = propsCollection.First(el => el.Item1 == typeof(T2));
