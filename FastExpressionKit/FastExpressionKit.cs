@@ -61,6 +61,13 @@ namespace FastExpressionKit
 
         public T2[] Extract(T1 obj) => expr.Invoke(obj);
 
+        // zip
+        public IEnumerable<Tuple<string, TP>> ResultsAsZip<TP>(ICollection<TP> hits)
+        {
+            var r =  Enumerable.Zip(Props, hits, (p,h) => Tuple.Create(p, h));
+            return r;
+        }
+
         // hits can be any enumerable, as long as it can be zipped with Props
         // 
         public Dictionary<string, TP> ResultsAsDict<TP>(ICollection<TP> hits)

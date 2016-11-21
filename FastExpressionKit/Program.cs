@@ -120,7 +120,7 @@ namespace ConsoleApplication2
             RepeatBench("Extract fields from large dto. string -> object dict", 10000, () =>
             {
                 var r1 = boxedExtract.Extract(big1);
-                var r2 = boxedExtract.ResultsAsDict(r1);
+                var r2 = boxedExtract.ResultsAsZip(r1);
             });
 
 
