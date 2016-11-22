@@ -156,22 +156,13 @@ namespace FastExpressionKitTests
 
         }
 
-        // test data
+        // test data for small objects
         static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now };
         static C c2 = new C() { a = 100, b = 12, mynullable = null };
         static D d1 = new D() { a = 666, b = 12, c = 123 };
         static D d2 = new D() { a = 100, b = 12, c = 223 };
         static string[] fields = new[] { "a", "b" };
 
-        [Test]
-        public static void StartTests()
-        {
-            // demo data
-
-            TestCopier();
-
-            //Benchmark();
-        }
         [Test]
         public static void TestCopier()
         {
@@ -228,11 +219,13 @@ namespace FastExpressionKitTests
         {
             var differ = new Differ<C, C>(new[] { "a", "b" });
             var res = differ.Compare(c1, c2);
-            // [ false, true]
 
             // compare different types!
             var differ2 = new Differ<C, D>(new[] { "a", "b" });
             res = differ2.Compare(c1, d1);
         }
+
+
+
     }
 }

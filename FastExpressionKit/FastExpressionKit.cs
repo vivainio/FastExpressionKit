@@ -6,26 +6,38 @@ using System.Reflection;
 
 namespace FastExpressionKit
 {
+    using DifferReturnValueType = Tuple<string, object>;
+
     public static class EE
     {
         public static ParameterExpression Var<T>(string name) => Expression.Variable(typeof(T), name);
         public static ParameterExpression Param<T>(string name) => Expression.Parameter(typeof(T), name);
         public static MemberExpression Dot(this Expression exp, string fieldName) => Expression.PropertyOrField(exp, fieldName);
         public static Expression IsEq(this Expression left, Expression right) => Expression.Equal(left, right);
-    }
+        public static Expression Val<T>(T value) => Expression.Constant(value, typeof(T));
+        public static MethodInfo Method(Expression<Action> exp) =>
+            (exp.Body as MethodCallExpression).Method;
+        public static Expression Box(Expression e) => Expression.Convert(e, typeof(object));
+
+     }
 
     public class Differ<T1, T2>
     {
         public readonly string[] Props;
-        private readonly Func<T1, T2, bool[]> comparisonFunc;
-        private Func<T1, T2, bool[]> CreateExpression(IEnumerable<string> fields)
+        private readonly Func<T1, T2, DifferReturnValueType[]> comparisonFunc;
+        private Func<T1, T2, DifferReturnValueType[]> CreateExpression(IEnumerable<string> fields)
         {
             var t1param = EE.Param<T1>("left");
             var t2param = EE.Param<T2>("right");
-
-            var cmplist = fields.Select(f => t1param.Dot(f).IsEq(t2param.Dot(f)));
-            var resultArr = Expression.NewArrayInit(typeof(bool), cmplist);
-            var l = Expression.Lambda<Func<T1, T2, bool[]>>(resultArr, t1param, t2param);
+            var NULL = EE.Val<DifferReturnValueType>(null);
+            var TupleCreate = EE.Method(() => Tuple.Create<string, object>("", null));
+            var cmplist2 = fields.Select(f =>
+                Expression.Condition(t1param.Dot(f).IsEq(t2param.Dot(f)),
+                    NULL,
+                    Expression.Call(TupleCreate, EE.Val(f), EE.Box(t2param.Dot(f)))));
+            var resultArr = Expression.NewArrayInit(typeof(DifferReturnValueType), cmplist2);
+            
+            var l = Expression.Lambda<Func<T1, T2, DifferReturnValueType[] >>(resultArr, t1param, t2param);
             return l.Compile();
         }
 
@@ -35,7 +47,7 @@ namespace FastExpressionKit
             this.comparisonFunc = CreateExpression(props);
         }
 
-        public bool[] Compare(T1 left, T2 right) => comparisonFunc.Invoke(left, right);
+        public DifferReturnValueType[] Compare(T1 left, T2 right) => comparisonFunc.Invoke(left, right);
     }
 
     public class FieldCopier<TTarget, TSrc>
@@ -63,19 +75,19 @@ namespace FastExpressionKit
         public void Copy(TTarget left, TSrc right) => assignExpr.Invoke(left, right);
     }
 
-    public class FieldExtract<T1, T2>
+    public class FieldExtract<T1, TVal>
     {
         public readonly string[] Props;
-        private readonly Func<T1, T2[]> expr;
+        private readonly Func<T1, TVal[]> expr;
 
-        private Func<T1, T2[]> CreateExpression(IEnumerable<string> fields)
+        private Func<T1, TVal[]> CreateExpression(IEnumerable<string> fields)
         {
             var t1param = EE.Param<T1>("obj");
             var elist = fields.Select(f => t1param.Dot(f)).Cast<Expression>();
-            if (typeof(T2) == typeof(object))
-                elist = elist.Select(e => Expression.Convert(e, typeof(object)));
-            var resultArr = Expression.NewArrayInit(typeof(T2), elist);
-            var l = Expression.Lambda<Func<T1, T2[]>>(resultArr, t1param);
+            if (typeof(TVal) == typeof(object))
+                elist = elist.Select(e => EE.Box(e));
+            var resultArr = Expression.NewArrayInit(typeof(TVal), elist);
+            var l = Expression.Lambda<Func<T1, TVal[]>>(resultArr, t1param);
             return l.Compile();
         }
 
@@ -85,7 +97,7 @@ namespace FastExpressionKit
             this.expr = CreateExpression(props);
         }
 
-        public T2[] Extract(T1 obj) => expr.Invoke(obj);
+        public TVal[] Extract(T1 obj) => expr.Invoke(obj);
 
         // zip
         public IEnumerable<Tuple<string, TP>> ResultsAsZip<TP>(ICollection<TP> hits)
