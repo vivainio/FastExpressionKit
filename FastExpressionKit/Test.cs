@@ -26,6 +26,15 @@ namespace FastExpressionKitTests
         public DateTime? mynullable { get; set; }
 
     }
+
+    public class SomeReadOnly
+    {
+        public int a { get; set; }
+        public int b { get; set; }
+        public int readOnly { get; }
+
+    }
+
     [TestFixture]
 
     class FastExprKitTest
@@ -225,6 +234,13 @@ namespace FastExpressionKitTests
             res = differ2.Compare(c1, d1);
         }
 
+        [Test]
+        public static void TestReflectionHelper()
+        {
+            var writeable = ReflectionHelper.WriteablePropNames<SomeReadOnly>();
+            Assert.Contains("a", writeable);
+            Assert.IsTrue(!writeable.Contains("readOnly"));
+        }
 
 
     }

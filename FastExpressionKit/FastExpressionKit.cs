@@ -125,7 +125,10 @@ namespace FastExpressionKit
         public static PropertyInfo[] GetProps<T>() => typeof(T)
             .GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
+
         public static string[] PropNames<T>() => GetProps<T>().Select(p => p.Name).ToArray();
+
+        public static string[] WriteablePropNames<T>() => GetProps<T>().Where(p => p.CanWrite).Select(p => p.Name).ToArray();
         public static IEnumerable<Tuple<Type, string[]>> CollectProps<T>() =>
                 GetProps<T>()
                 .GroupBy(prop => prop.PropertyType)
