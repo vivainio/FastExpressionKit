@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.25807.0
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D7A5DAB8-1D8D-43C2-BEEF-5DD5B5855C6E}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastExpressionKit", "FastExpressionKit\FastExpressionKit.csproj", "{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}"
 EndProject
 Global
