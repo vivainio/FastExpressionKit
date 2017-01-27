@@ -58,5 +58,7 @@ Expressions (EE), but those are not part of the documented API.
 
 ### License
 
+```
 License: MIT
 Copyright 2017 Ville M. Vainio
+```
