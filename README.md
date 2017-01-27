@@ -55,3 +55,8 @@ The property types must be of the same type, as copying is just doing src.foo = 
 
 The library also contains some helpers for doing reflection (ReflectionHelper) and static helpers for creating
 Expressions (EE), but those are not part of the documented API.
+
+### License
+
+License: MIT
+Copyright 2017 Ville M. Vainio
