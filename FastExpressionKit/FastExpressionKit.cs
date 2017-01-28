@@ -1,4 +1,8 @@
-﻿using System;
+﻿// FastExpressionKit
+// License: MIT: Copyright (c) 2017 Ville M. Vainio <vivainio@gmail.com>
+// See details at https://github.com/vivainio/FastExpressionKit
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;

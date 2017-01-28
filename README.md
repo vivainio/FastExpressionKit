@@ -6,7 +6,36 @@ Reflection in C# can be slow. There are operations that iterate over certain pro
 
 This mini-library (just one .cs file to copy to your project, less than 200 lines!) provides minimal building blocks that generate code (Linq Expressions) and compile it to fast machine code. The recommended pattern is to instantiate the class where you configure your mappings (takes few milliseconds), and then reuse the instance for hundreds of operations with good performance (few microseconds per round).
 
-Classes provided are:
+## Installation
+
+Options:
+
+Either
+
+- Download FastExpressionKit.cs and add it to your project
+
+Or:
+
+
+- Use Paket `github` dependency. This is handy if you plan to update the version eventually.
+
+Add this to your `paket.dependencies`:
+
+```
+github vivainio/FastExpressionKit FastExpressionKit/FastExpressionKit.cs
+```
+
+and to refer to the file in your csproj file, add this to `paket.references`:
+
+```
+File: FastExpressionKit.cs
+```
+
+After `paket install`, you will find the file in `paket-files/` directory. A reference has automatically been added to your csproj file.
+
+
+
+## Usage
 
 ### FieldExtract
 
