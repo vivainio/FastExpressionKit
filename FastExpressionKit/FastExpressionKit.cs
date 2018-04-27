@@ -40,7 +40,7 @@ namespace FastExpressionKit
                     NULL,
                     Expression.Call(TupleCreate, EE.Val(f), EE.Box(t2param.Dot(f)))));
             var resultArr = Expression.NewArrayInit(typeof(DifferReturnValueType), cmplist2);
-            
+
             var l = Expression.Lambda<Func<T1, T2, DifferReturnValueType[] >>(resultArr, t1param, t2param);
             return l.Compile();
         }
@@ -103,7 +103,7 @@ namespace FastExpressionKit
 
         public TVal[] Extract(T1 obj) => expr.Invoke(obj);
 
-        // zip
+        // zip {}
         public IEnumerable<Tuple<string, TP>> ResultsAsZip<TP>(ICollection<TP> hits)
         {
             var r =  Enumerable.Zip(Props, hits, (p,h) => Tuple.Create(p, h));
@@ -111,7 +111,7 @@ namespace FastExpressionKit
         }
 
         // hits can be any enumerable, as long as it can be zipped with Props
-        // 
+        //
         public Dictionary<string, TP> ResultsAsDict<TP>(ICollection<TP> hits)
         {
             var d = new Dictionary<string, TP>();
@@ -122,7 +122,33 @@ namespace FastExpressionKit
             return d;
         }
     }
+    // Usable with FieldExtract instances
+    public static class FieldExtractUtil {
+        // emit array of object arrays, usable e.g. for sql bulk copy (one array per extracted property)
+        public static object[][] ExtractToObjectArrays<T1>(FieldExtract<T1, object> extractor, ICollection<T1> entries) {
+            // extract everything to jagged arrays
+            // then transpose it
+            var ecount = entries.Count;
+            var extracted = new object[entries.Count][];
+            for (var i=0; i < entries.Count; i++) {
+                extracted[i] = extractor.Extract(entries.ElementAt(i));
 
+            }
+            object[][] jagged = new object[extractor.Props.Length][];
+            for (var i = 0; i < extractor.Props.Length; i++) {
+                jagged[i] = new object[ecount];
+
+            }
+
+            for (var i = 0; i < entries.Count; i++) {
+                for (var j=0; j < extractor.Props.Count(); j++) {
+                    jagged[j][i] = extracted[i][j];
+                }
+
+            }
+            return jagged;
+        }
+    }
     public static class ReflectionHelper
     {
         // create cache for GetExtractorFor by reflecting on object

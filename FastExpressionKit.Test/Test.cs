@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using static System.Console;
 using TrivialTestRunner;
 using FastExpressionKit;
+using Newtonsoft.Json;
 
 namespace FastExpressionKitTests
 {
@@ -14,6 +15,7 @@ namespace FastExpressionKitTests
     {
         public int a { get; set; }
         public int b { get; set; }
+        public string s {get; set;}
         public DateTime date { get; set; }
         public DateTime? mynullable { get; set; }
     }
@@ -164,8 +166,8 @@ namespace FastExpressionKitTests
         }
 
         // test data for small objects
-        static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now };
-        static C c2 = new C() { a = 100, b = 12, mynullable = null };
+        static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one" };
+        static C c2 = new C() { a = 100, b = 12, mynullable = null, s ="two" };
         static D d1 = new D() { a = 666, b = 12, c = 123 };
         static D d2 = new D() { a = 100, b = 12, c = 223 };
         static string[] fields = new[] { "a", "b" };
@@ -199,8 +201,8 @@ namespace FastExpressionKitTests
             tryit(c1);
             tryit(c2);
         }
-
-        public static void FieldExtractTest()
+        [Case]
+        public static void TestFieldExtract()
         {
             var extractor = new FieldExtract<C, int>(fields);
             var results = extractor.Extract(c1);
@@ -209,7 +211,7 @@ namespace FastExpressionKitTests
             {
                 var fails = new FieldExtract<C, string>(fields);
             }
-            catch (InvalidOperationException e) { };
+            catch (InvalidOperationException) { };
 
             var ee = new FieldExtract<C, DateTime?>(new[] { "mynullable" });
             var r = ee.Extract(c1);
@@ -220,7 +222,14 @@ namespace FastExpressionKitTests
             var e3 = new FieldExtract<C, DateTime>(new[] { "date" });
             var r3 = e3.Extract(c1);
         }
-
+        [Case]
+        public static void TestExtractToArrays() {
+            var extractor = new FieldExtract<C, object>(new[] { "a", "b", "s"});
+            var results = extractor.Extract(c1);
+            var extracted = FieldExtractUtil.ExtractToObjectArrays(extractor, new[] { c1, c2, c1, c2} );
+            var serialized = JsonConvert.SerializeObject(extracted);
+            Assert.AreEqual(serialized, @"[[100,100,100,100],[12,12,12,12],[""one"",""two"",""one"",""two""]]");
+        }
         [Case]
         public static void DifferSmall()
         {
