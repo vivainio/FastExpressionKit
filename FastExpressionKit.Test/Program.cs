@@ -1,4 +1,6 @@
 ﻿using System;
+using TrivialTestRunner;
+using FastExpressionKitTests;
 
 namespace FastExpressionKit.Test
 {
@@ -6,7 +8,9 @@ namespace FastExpressionKit.Test
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            TRunner.AddTests<FastExprKitTest>();
+            TRunner.RunTests();
+            TRunner.ReportAll();
         }
     }
 }

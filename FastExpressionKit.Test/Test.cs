@@ -1,5 +1,4 @@
 ﻿using FakePoc;
-using FastExpressionKit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using static System.Console;
 using TrivialTestRunner;
+using FastExpressionKit;
 
 namespace FastExpressionKitTests
 {
