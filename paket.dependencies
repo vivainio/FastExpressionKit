@@ -1,4 +1,0 @@
-source https://www.nuget.org/api/v2
-framework >= net452
-nuget NUnit 3.5.0
-nuget NUnitLite 3.5.0
