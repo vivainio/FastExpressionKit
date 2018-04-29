@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Title>FastExpressionKit</Title>
+    <Description>Library to reduce repeated reflection</Description>
+    <Authors>vivainio</Authors>
+    <Company />
+    <Copyright>Ville Vainio</Copyright>
+    <PackageProjectUrl>https://github.com/vivainio/FastExpressionKit</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/vivainio/FastExpressionKit/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
-
 </Project>
