@@ -1,5 +1,7 @@
 # FastExpressionKit
 
+[![Build Status](https://dev.azure.com/ville0567/ville/_apis/build/status/vivainio.FastExpressionKit?branchName=master)](https://dev.azure.com/ville0567/ville/_build/latest?definitionId=2&branchName=master)
+
 ## A small library to make reflection-y things faster
 
 Reflection in C# can be slow. There are operations that iterate over certain properties of objects that typically use reflection, with suboptimal performance.
