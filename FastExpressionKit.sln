@@ -1,14 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.25807.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D7A5DAB8-1D8D-43C2-BEEF-5DD5B5855C6E}"
 	ProjectSection(SolutionItems) = preProject
 		paket.dependencies = paket.dependencies
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastExpressionKit", "FastExpressionKit\FastExpressionKit.csproj", "{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastExpressionKit", "FastExpressionKit\FastExpressionKit.csproj", "{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastExpressionKit.Test", "FastExpressionKit.Test\FastExpressionKit.Test.csproj", "{1A357FA1-8AF9-410A-848D-03568F4B9825}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,8 +22,15 @@ Global
 		{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71FDACFF-C5CF-4B31-BB3B-6668E1A3672C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A357FA1-8AF9-410A-848D-03568F4B9825}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A357FA1-8AF9-410A-848D-03568F4B9825}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A357FA1-8AF9-410A-848D-03568F4B9825}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A357FA1-8AF9-410A-848D-03568F4B9825}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {92AF36B8-EB91-4610-9019-08269645F8B5}
 	EndGlobalSection
 EndGlobal
