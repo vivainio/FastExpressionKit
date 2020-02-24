@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Devart.Data.Oracle" Version="9.11.951" />
+    <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
+  </ItemGroup>
+
+</Project>
