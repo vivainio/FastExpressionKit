@@ -8,6 +8,8 @@ using static System.Console;
 using TrivialTestRunner;
 using FastExpressionKit;
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations.Schema;
+using FastExpressionKit.BulkInsert;
 
 namespace FastExpressionKitTests
 {
@@ -21,12 +23,22 @@ namespace FastExpressionKitTests
     }
     public class D
     {
+        [Column("A_COL")]
         public int a { get; set; }
-        public int b { get; set; }
-        public int c { get; set; }
-        public DateTime date { get; set; }
-        public DateTime? mynullable { get; set; }
+        [Column("B_COL")]
 
+        public int b { get; set; }
+
+        [Column("C_COL")]
+        public int c { get; set; }
+
+        [Column("DATE_COL")]
+        public DateTime date { get; set; }
+
+        public string NoTable { get; set; }
+        [Column("DATE_NULLABLE_COL")]
+
+        public DateTime? mynullable { get; set; }
     }
 
     public class SomeReadOnly
@@ -248,7 +260,14 @@ namespace FastExpressionKitTests
             //Assert.Contains("a", writeable);
             Assert.IsTrue(!writeable.Contains("readOnly"));
         }
-
-
+        
+        [fCase]
+        public static void DbBulkInsert()
+        {
+            BulkInserter.CreateBulkInserter<D>();
+            
+            var dtos = new[] { c1, c2 };
+            var ex = new FieldExtract<C, object>(new[] { "a", "b" } );
+        }
     }
 }

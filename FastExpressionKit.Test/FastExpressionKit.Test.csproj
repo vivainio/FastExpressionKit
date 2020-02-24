@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\FastExpressionKit.BulkInsert\FastExpressionKit.BulkInsert.csproj" />
     <ProjectReference Include="..\FastExpressionKit\FastExpressionKit.csproj" />
   </ItemGroup>
 
@@ -9,9 +10,13 @@
     <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
   </PropertyGroup>
 
 </Project>
