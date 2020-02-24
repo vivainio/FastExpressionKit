@@ -5,33 +5,76 @@ using System.Text;
 
 namespace FastExpressionKit.BulkInsert
 {
-    public struct MapperPropertyData
+
+    // these are compatible with a proprietary database driver
+    public enum DbParameterTypeNumbers
+    {
+        NVarChar = 18, 
+        Number = 19, 
+        Raw = 22, 
+        TimeStamp = 25
+    }
+
+
+    public class MapperPropertyData
     {
         public string Name;
         public string DbColumnName;
-
+        public string ParameterNameInQuery;
         public Type FieldType { get; set; }
     }
 
-    public class TableBulkInserter<TEntity>
+    // you can use this to construct DbParameter objects for your db driver
+    // e.g. OracleParameter
+    public class BulkInsertInstructions
+    {
+        public object[] Values { get; set; }
+
+        public DbParameterTypeNumbers DbParamType { get; set; }
+        public string ParameterName { get; set; }
+
+    }
+    public class FastBulkInserter<TEntity>
     {
         
         public string TableName { get; set; }
         public IReadOnlyList<MapperPropertyData> Properties { get; set; }
         public FieldExtract<TEntity, object> FieldExtractor { get; set; }
         public string InsertSql { get; set; }
+        public IReadOnlyList<BulkInsertInstructions> BuildInstructionsForRows(IReadOnlyList<TEntity> rows)
+        {
+            var objs = FieldExtractUtil.ExtractToObjectArrays(FieldExtractor, rows);
+            var instructions = new BulkInsertInstructions[Properties.Count];
+
+            for (var i=0; i < Properties.Count; i++)
+            {
+                var prop = Properties[i];
+                instructions[i] = new BulkInsertInstructions
+                {
+                    DbParamType = BulkInserter.ParameterTypeMap[prop.FieldType],
+                    ParameterName = prop.ParameterNameInQuery,
+                    Values = objs[i]
+                };
+            }
+            return instructions;
+        }
     }
 
     public static class BulkInserter
     {
-
-        public static string CreateInsertSql(IReadOnlyList<MapperPropertyData> Properties)
+        public static Dictionary<Type, DbParameterTypeNumbers> ParameterTypeMap = new Dictionary<Type, DbParameterTypeNumbers>
         {
-            return "";
+            [typeof(Guid)] = DbParameterTypeNumbers.Raw,
+            [typeof(DateTime)] = DbParameterTypeNumbers.TimeStamp,
+            [typeof(string)] = DbParameterTypeNumbers.NVarChar,
+            [typeof(Int32)] = DbParameterTypeNumbers.Number,
+            [typeof(Nullable<DateTime>)] = DbParameterTypeNumbers.TimeStamp
+
+        };
 
 
-        }
-        public static TableBulkInserter<TEntity> CreateBulkInserter<TEntity>()
+        // you should use this to create inserters BUT you should cache them
+        public static FastBulkInserter<TEntity> CreateBulkInserter<TEntity>()
         {
             var props = ReflectionHelper.GetProps<TEntity>();
 
@@ -64,10 +107,13 @@ namespace FastExpressionKit.BulkInsert
                     continue;
                 }
 
+                var paramNameInQuery = ":B" + index.ToString();
                 mappedProps.Add(new MapperPropertyData {
                     Name = prop.Name,
                     DbColumnName = columnName,
-                    FieldType = prop.PropertyType
+                    FieldType = prop.PropertyType,
+                    ParameterNameInQuery = paramNameInQuery
+
                 });
 
                 mappedColumnNames.Add(prop.Name);
@@ -75,12 +121,11 @@ namespace FastExpressionKit.BulkInsert
                 sql.Append(columnName);
                 sql.Append(",");
                 index++;
-                valuesSql.Append(":B");
-                valuesSql.Append(index);
+                valuesSql.Append(paramNameInQuery);
                 valuesSql.Append(",");
             };
 
-            // remove last ','
+            // remove last ',' and close both strings
             sql.Length--;
             sql.Append(") ");
             valuesSql.Length--;
@@ -89,7 +134,7 @@ namespace FastExpressionKit.BulkInsert
             sql.Append(valuesSql);
             var finalSql = sql.ToString();
             var extractor = new FieldExtract<TEntity, object>(mappedColumnNames.ToArray());
-            var bulkInserter = new TableBulkInserter<TEntity>()
+            var bulkInserter = new FastBulkInserter<TEntity>()
             {
                 InsertSql = finalSql,
                 Properties = mappedProps,

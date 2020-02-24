@@ -125,7 +125,7 @@ namespace FastExpressionKit
     // Usable with FieldExtract instances
     public static class FieldExtractUtil {
         // emit array of object arrays, usable e.g. for sql bulk copy (one array per extracted property)
-        public static object[][] ExtractToObjectArrays<T1>(FieldExtract<T1, object> extractor, ICollection<T1> entries) {
+        public static object[][] ExtractToObjectArrays<T1>(FieldExtract<T1, object> extractor, IReadOnlyList<T1> entries) {
             // extract everything to jagged arrays
             // then transpose it
             var ecount = entries.Count;

@@ -177,11 +177,12 @@ namespace FastExpressionKitTests
 
         }
 
+        static DateTime SomeDate = new DateTime(2020, 2, 24);
         // test data for small objects
         static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one" };
         static C c2 = new C() { a = 100, b = 12, mynullable = null, s ="two" };
-        static D d1 = new D() { a = 666, b = 12, c = 123, date = new DateTime(1000), NoTable = "not mapped", mynullable = null };
-        static D d2 = new D() { a = 100, b = 12, c = 223 , mynullable = new DateTime(1000)};
+        static D d1 = new D() { a = 666, b = 12, c = 123, date = SomeDate, NoTable = "not mapped", mynullable = null };
+        static D d2 = new D() { a = 100, b = 12, c = 223 , date = SomeDate, mynullable = SomeDate};
         static string[] fields = new[] { "a", "b" };
 
         [Case]
@@ -268,7 +269,8 @@ namespace FastExpressionKitTests
             
             var dtos = new[] { d1, d2 };
 
-            var obj = inserter.FieldExtractor.Extract(d1);
+            var instructions = inserter.BuildInstructionsForRows(dtos);
+
 
         }
     }
