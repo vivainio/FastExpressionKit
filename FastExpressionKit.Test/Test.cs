@@ -180,8 +180,8 @@ namespace FastExpressionKitTests
         // test data for small objects
         static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one" };
         static C c2 = new C() { a = 100, b = 12, mynullable = null, s ="two" };
-        static D d1 = new D() { a = 666, b = 12, c = 123 };
-        static D d2 = new D() { a = 100, b = 12, c = 223 };
+        static D d1 = new D() { a = 666, b = 12, c = 123, date = new DateTime(1000), NoTable = "not mapped", mynullable = null };
+        static D d2 = new D() { a = 100, b = 12, c = 223 , mynullable = new DateTime(1000)};
         static string[] fields = new[] { "a", "b" };
 
         [Case]
@@ -264,10 +264,12 @@ namespace FastExpressionKitTests
         [fCase]
         public static void DbBulkInsert()
         {
-            BulkInserter.CreateBulkInserter<D>();
+            var inserter = BulkInserter.CreateBulkInserter<D>();
             
-            var dtos = new[] { c1, c2 };
-            var ex = new FieldExtract<C, object>(new[] { "a", "b" } );
+            var dtos = new[] { d1, d2 };
+
+            var obj = inserter.FieldExtractor.Extract(d1);
+
         }
     }
 }

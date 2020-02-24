@@ -10,7 +10,7 @@ namespace FastExpressionKit.BulkInsert
         public string Name;
         public string DbColumnName;
 
-        public Type FieldType { get; internal set; }
+        public Type FieldType { get; set; }
     }
 
     public class TableBulkInserter<TEntity>
@@ -18,8 +18,8 @@ namespace FastExpressionKit.BulkInsert
         
         public string TableName { get; set; }
         public IReadOnlyList<MapperPropertyData> Properties { get; set; }
-        public FieldExtract<TEntity, object> FieldExtracter { get; set; }
-
+        public FieldExtract<TEntity, object> FieldExtractor { get; set; }
+        public string InsertSql { get; set; }
     }
 
     public static class BulkInserter
@@ -31,11 +31,11 @@ namespace FastExpressionKit.BulkInsert
 
 
         }
-        public static void CreateBulkInserter<T>()
+        public static TableBulkInserter<TEntity> CreateBulkInserter<TEntity>()
         {
-            var props = ReflectionHelper.GetProps<T>();
+            var props = ReflectionHelper.GetProps<TEntity>();
 
-            var tableAttrs = typeof(T).GetCustomAttributes(typeof(TableAttribute), true);
+            var tableAttrs = typeof(TEntity).GetCustomAttributes(typeof(TableAttribute), true);
             var tableName = tableAttrs.Length > 1 ? ((TableAttribute)tableAttrs[0]).Name : null;
 
             var mappedProps = new List<MapperPropertyData>();
@@ -51,6 +51,7 @@ namespace FastExpressionKit.BulkInsert
             var valuesSql = new StringBuilder();
             valuesSql.Append("VALUES (");
             int index = 0;
+            var mappedColumnNames = new List<string>(props.Length);
             foreach (var prop in props)        
             {
                 var columnAttr = prop.GetCustomAttributes(typeof(ColumnAttribute), true );
@@ -62,11 +63,14 @@ namespace FastExpressionKit.BulkInsert
                     // we skip columns with no [Column] attribute
                     continue;
                 }
+
                 mappedProps.Add(new MapperPropertyData {
                     Name = prop.Name,
                     DbColumnName = columnName,
                     FieldType = prop.PropertyType
                 });
+
+                mappedColumnNames.Add(prop.Name);
 
                 sql.Append(columnName);
                 sql.Append(",");
@@ -83,8 +87,16 @@ namespace FastExpressionKit.BulkInsert
             valuesSql.Append(')');
 
             sql.Append(valuesSql);
-
             var finalSql = sql.ToString();
+            var extractor = new FieldExtract<TEntity, object>(mappedColumnNames.ToArray());
+            var bulkInserter = new TableBulkInserter<TEntity>()
+            {
+                InsertSql = finalSql,
+                Properties = mappedProps,
+                TableName = tableName,
+                FieldExtractor = extractor
+            };
+            return bulkInserter;
         }
 
     }
