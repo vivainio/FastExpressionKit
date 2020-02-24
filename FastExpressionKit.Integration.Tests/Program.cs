@@ -1,4 +1,5 @@
 ﻿using System;
+using TrivialTestRunner;
 
 namespace FastExpressionKit.Integration.Tests
 {
@@ -6,7 +7,9 @@ namespace FastExpressionKit.Integration.Tests
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            TRunner.AddTests<IntegrationTests>();
+            TRunner.RunTests();
+            TRunner.ReportAll();
         }
     }
 }
