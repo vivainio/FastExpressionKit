@@ -9,10 +9,16 @@ namespace FastExpressionKit.BulkInsert
     // these are compatible with a proprietary database driver
     public enum DbParameterTypeNumbers
     {
+        Date = 8,
+        Double = 9,
+        Float = 10,
+        Integer = 11,
         NVarChar = 18, 
         Number = 19, 
         Raw = 22, 
-        TimeStamp = 25
+        TimeStamp = 25,
+        VarChar = 28,
+
     }
 
 
@@ -62,14 +68,13 @@ namespace FastExpressionKit.BulkInsert
 
     public static class BulkInserter
     {
-        public static Dictionary<Type, DbParameterTypeNumbers> ParameterTypeMap = new Dictionary<Type, DbParameterTypeNumbers>
+        public static readonly Dictionary<Type, DbParameterTypeNumbers> ParameterTypeMap = new Dictionary<Type, DbParameterTypeNumbers>
         {
             [typeof(Guid)] = DbParameterTypeNumbers.Raw,
-            [typeof(DateTime)] = DbParameterTypeNumbers.TimeStamp,
+            [typeof(DateTime)] = DbParameterTypeNumbers.Date,
             [typeof(string)] = DbParameterTypeNumbers.NVarChar,
             [typeof(Int32)] = DbParameterTypeNumbers.Number,
-            [typeof(Nullable<DateTime>)] = DbParameterTypeNumbers.TimeStamp
-
+            [typeof(DateTime?)] = DbParameterTypeNumbers.Date
         };
 
 
@@ -79,7 +84,7 @@ namespace FastExpressionKit.BulkInsert
             var props = ReflectionHelper.GetProps<TEntity>();
 
             var tableAttrs = typeof(TEntity).GetCustomAttributes(typeof(TableAttribute), true);
-            var tableName = tableAttrs.Length > 1 ? ((TableAttribute)tableAttrs[0]).Name : null;
+            var tableName = tableAttrs.Length > 0 ? ((TableAttribute)tableAttrs[0]).Name : null;
 
             var mappedProps = new List<MapperPropertyData>();
 
@@ -115,9 +120,7 @@ namespace FastExpressionKit.BulkInsert
                     ParameterNameInQuery = paramNameInQuery
 
                 });
-
                 mappedColumnNames.Add(prop.Name);
-
                 sql.Append(columnName);
                 sql.Append(",");
                 index++;

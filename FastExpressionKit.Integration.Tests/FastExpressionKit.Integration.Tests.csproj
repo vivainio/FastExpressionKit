@@ -7,13 +7,36 @@
 
   <ItemGroup>
     <PackageReference Include="AutoFixture" Version="4.11.0" />
-    <PackageReference Include="Devart.Data.Oracle" Version="9.11.951" />
     <PackageReference Include="EntityFramework" Version="6.4.0" />
     <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FastExpressionKit.Test\FastExpressionKit.Test.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Devart.Data">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle.Entity.EF6">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.Entity.EF6.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle.Entity.Spatials.EF6">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.Entity.Spatials.EF6.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle.Vs">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.Vs.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle.Web">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="Devart.Data.Oracle.Web.Identity">
+      <HintPath>..\..\..\o\3rdParty\Devart\Devart.Data.Oracle.Web.Identity.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace FastExpressionKit.Integration.Tests
         public static void FastBulkInsert<TEntity>(IReadOnlyList<TEntity> rows, IDbTransaction transaction)
         {
 
+            // warning, oracle specific code
             var bi = BulkInserter.CreateBulkInserter<TEntity>();
             var instr = bi.BuildInstructionsForRows(rows);
 
@@ -26,9 +28,10 @@ namespace FastExpressionKit.Integration.Tests
             var conn = (OracleConnection) transaction.Connection;
 
             var inputLen = rows.Count;
-            var command = conn.CreateCommand();
+            var command = conn.CreateCommand(bi.InsertSql, CommandType.Text);
             var allParams = instr.Select(it =>
             {
+
                 var param = new OracleParameter(it.ParameterName,
                     (OracleDbType)(int)it.DbParamType,
                     it.Values,
@@ -38,13 +41,10 @@ namespace FastExpressionKit.Integration.Tests
             }).ToArray();
             command.Parameters.AddRange(allParams);
             command.ExecuteArray(inputLen);
-
         }
 
-        public static void FastBulkInsertWithEfContext<TEntity>(this DbContext context, IReadOnlyList<TEntity> rows)
+        public static void FastBulkInsertWithConnection<TEntity>(IReadOnlyList<TEntity> rows, DbConnection conn)
         {
-            var conn = context.Database.Connection;
-
             var needClosing = false;
             if (conn.State == System.Data.ConnectionState.Closed)
             {
@@ -57,36 +57,50 @@ namespace FastExpressionKit.Integration.Tests
                 try
                 {
                     FastBulkInsert(rows, transaction);
+                    transaction.Commit();
                 }
-
                 catch (Exception)
                 {
                     transaction.Rollback();
                     if (needClosing)
                     {
                         conn.Close();
-
                     }
+                    throw;
                 }
             }
+        }
 
+
+        public static void FastBulkInsertWithEfContext<TEntity>(this DbContext context, IReadOnlyList<TEntity> rows)
+        {
+            var conn = context.Database.Connection;
+            FastBulkInsertWithConnection(rows, conn);
         }
     }
     public class IntegrationTests
-    {
-        [fCase]
-        public static void CreateParameters()
-        {
 
-            var fixture = new AutoFixture.Fixture();
-            var rows = fixture.CreateMany<FastExpressionKitTests.D>().ToArray();
-            var bi = BulkInserter.CreateBulkInserter<FastExpressionKitTests.D>();
-            var instr = bi.BuildInstructionsForRows(rows);
-            //var ds = fixture.Freeze <FastExpressionKitTests.D>();
+    {
+        static string ConnectionStringForIntegrationTest => File.ReadAllText(@"C:\o\3rdParty\Devart\connection_string.txt").Trim();
+
+        static OracleConnection GetConnection() => new OracleConnection(ConnectionStringForIntegrationTest);
+        
+        [Case]
+        public static void ConnectToLocalDbWithDevart()
+        {
             
+            var conn = new OracleConnection(ConnectionStringForIntegrationTest);
+            conn.Open();
+            conn.Close();
 
         }
-
-
+        [fCase]
+        public static void InsertFew()
+        {
+            var f = new Fixture();
+            var testentities = f.CreateMany<TestDbEntity>(22000).ToArray();
+            var conn = GetConnection();
+            DevartFastBulkInsert.FastBulkInsertWithConnection<TestDbEntity>(testentities, conn);
+        }
     }
 }
