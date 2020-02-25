@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="AutoFixture" Version="4.11.0" />
     <PackageReference Include="Devart.Data.Oracle" Version="9.11.951" />
+    <PackageReference Include="EntityFramework" Version="6.4.0" />
     <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
   </ItemGroup>
 
