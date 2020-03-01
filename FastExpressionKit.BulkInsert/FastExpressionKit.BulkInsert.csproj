@@ -12,13 +12,12 @@
     <PackageLicenseUrl>https://github.com/vivainio/FastExpressionKit/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
-
   <ItemGroup>
-    <ProjectReference Include="..\FastExpressionKit\FastExpressionKit.csproj" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <PackageReference Include="FastExpressionKit" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
