@@ -19,8 +19,8 @@ startdir = Path(".").absolute()
 
 for prjdir in projects:
     os.chdir(startdir / prjdir)
-    nuke(prjdir + "/bin")
-    nuke(prjdir + "/obj")
+    nuke("bin")
+    nuke("obj")
 
     def pack():
         c("dotnet pack -c Release /p:Version=%s" % version)
