@@ -21,12 +21,10 @@ namespace FastExpressionKit.Integration.Tests
         {
 
             // warning, oracle specific code
-            var bi = BulkInserter.CreateBulkInserter<TEntity>();
+            var bi = FastBulkInsertUtil.CreateBulkInserter<TEntity>();
             var instr = bi.BuildInstructionsForRows(rows);
-
             var tx = (OracleTransaction)transaction;
             var conn = (OracleConnection) transaction.Connection;
-
             var inputLen = rows.Count;
             var command = conn.CreateCommand(bi.InsertSql, CommandType.Text);
             var allParams = instr.Select(it =>
@@ -78,6 +76,8 @@ namespace FastExpressionKit.Integration.Tests
             FastBulkInsertWithConnection(rows, conn);
         }
     }
+
+    
     public class IntegrationTests
 
     {
@@ -94,11 +94,11 @@ namespace FastExpressionKit.Integration.Tests
             conn.Close();
 
         }
-        [fCase]
+        [Case]
         public static void InsertFew()
         {
             var f = new Fixture();
-            var testentities = f.CreateMany<TestDbEntity>(22000).ToArray();
+            var testentities = f.CreateMany<TestDbEntity>(1000).ToArray();
             var conn = GetConnection();
             DevartFastBulkInsert.FastBulkInsertWithConnection<TestDbEntity>(testentities, conn);
         }

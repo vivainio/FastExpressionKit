@@ -265,7 +265,7 @@ namespace FastExpressionKitTests
         [fCase]
         public static void DbBulkInsert()
         {
-            var inserter = BulkInserter.CreateBulkInserter<D>();
+            var inserter = FastBulkInsertUtil.CreateBulkInserter<D>();
             
             var dtos = new[] { d1, d2 };
 

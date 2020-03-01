@@ -19,4 +19,12 @@ namespace FastExpressionKit.Integration.Tests
         [Column("UPDATE_TIME")]
         public DateTime MyDate { get; set; }
     }
+    
+    public class TestDbEntityWithoutAnnotations
+    {
+        public Guid MyId { get; set; }
+        public string MyString { get; set; }
+        public DateTime MyDate { get; set; }
+    }
+    
 }
