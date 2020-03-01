@@ -1,9 +1,11 @@
 from __future__ import print_function
 
+from pathlib import Path
+
 import os,shutil
 
-prjdir = "FastExpressionKit"
-version = "1.0.0.0"
+projects = ["FastExpressionKit", "FastExpressionKit.BulkInsert"]
+version = "1.1.0.0"
 def c(s):
     print(">",s)
     err = os.system(s)
@@ -13,15 +15,14 @@ def nuke(pth):
     if os.path.isdir(pth):
         shutil.rmtree(pth)
 
-nuke(prjdir + "/bin")
-nuke(prjdir + "/obj")
+startdir = Path(".").absolute()
 
-os.chdir("%s.Test" % prjdir )
-c("dotnet run")
+for prjdir in projects:
+    os.chdir(startdir / prjdir)
+    nuke(prjdir + "/bin")
+    nuke(prjdir + "/obj")
 
-def pack():
-    c("dotnet pack /p:Version=%s" % version)
+    def pack():
+        c("dotnet pack -c Release /p:Version=%s" % version)
 
-
-os.chdir("../" + prjdir)
-pack()
+    pack()

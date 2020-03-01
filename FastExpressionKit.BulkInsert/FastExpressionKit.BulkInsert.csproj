@@ -1,8 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Title>FastExpressionKit.BulkInsert</Title>
     <TargetFramework>net472</TargetFramework>
+
+    <Description>Library to quick bulk insert entities to database</Description>
+    <Authors>vivainio</Authors>
+    <Company />
+    <Copyright>Ville Vainio</Copyright>
+    <PackageProjectUrl>https://github.com/vivainio/FastExpressionKit</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/vivainio/FastExpressionKit/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\FastExpressionKit\FastExpressionKit.csproj" />
