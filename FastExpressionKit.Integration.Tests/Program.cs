@@ -11,9 +11,8 @@ namespace FastExpressionKit.Integration.Tests
         {
             var config = DefaultConfig.Instance.With(ConfigOptions.DisableOptimizationsValidator);
             var summary = BenchmarkRunner.Run(typeof(Program).Assembly, config);
-
-
         }
+        
         static void Main(string[] args)
 
         {

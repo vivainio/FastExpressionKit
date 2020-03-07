@@ -10,6 +10,7 @@ using FastExpressionKit;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
 using FastExpressionKit.BulkInsert;
+using NFluent;
 
 namespace FastExpressionKitTests
 {
@@ -262,15 +263,23 @@ namespace FastExpressionKitTests
             Assert.IsTrue(!writeable.Contains("readOnly"));
         }
         
-        [fCase]
+        [Case]
         public static void DbBulkInsert()
         {
             var inserter = FastBulkInsertUtil.CreateBulkInserter<D>();
-            
             var dtos = new[] { d1, d2 };
-
             var instructions = inserter.BuildInstructionsForRows(dtos);
+            Check.That(instructions).CountIs(5);
+        }
 
+        [Case]
+        public static void TestCachedInserters()
+        {
+            var i1 = FastBulkInsertUtil.CreateBulkInserter<D>();
+            FastBulkInsertCache.Add(i1);
+            Check.ThatCode(() => { FastBulkInsertCache.Add(i1); }).Throws<ArgumentException>();
+            var got = FastBulkInsertCache.Get<D>();
+            Check.That(got).Equals(i1);
 
         }
     }

@@ -21,9 +21,7 @@ namespace FastExpressionKit.BulkInsert
         Raw = 22, 
         TimeStamp = 25,
         VarChar = 28,
-
     }
-
 
     public class MapperPropertyData
     {
@@ -71,6 +69,23 @@ namespace FastExpressionKit.BulkInsert
         }
     }
 
+    // use as singleton
+    public static class FastBulkInsertCache
+    {
+        // no point in concurrent dictionary because it has to be populated well ahead of time
+        
+        private static Dictionary<Type, object> cache = new Dictionary<Type, object>();
+
+        public static void Add<TEntity>(FastBulkInserter<TEntity> inserter)
+        {
+            cache.Add(typeof(TEntity), inserter);
+        }
+
+        public static FastBulkInserter<TEntity> Get<TEntity>()
+        {
+            return (FastBulkInserter<TEntity>) cache[typeof(TEntity)];
+        }
+    }
     public static class FastBulkInsertUtil
     {
         public static readonly Dictionary<Type, DbParameterTypeNumbers> ParameterTypeMap = new Dictionary<Type, DbParameterTypeNumbers>
