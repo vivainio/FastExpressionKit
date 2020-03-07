@@ -5,7 +5,7 @@ from pathlib import Path
 import os,shutil
 
 projects = ["FastExpressionKit", "FastExpressionKit.BulkInsert"]
-version = "1.1.0.0"
+version = "1.2.0.0"
 def c(s):
     print(">",s)
     err = os.system(s)
@@ -23,6 +23,6 @@ for prjdir in projects:
     nuke("obj")
 
     def pack():
-        c("dotnet pack -c Release /p:Version=%s" % version)
+        c(f"dotnet pack -c Release /p:Version={version} /p:PubVer={version}")
 
     pack()

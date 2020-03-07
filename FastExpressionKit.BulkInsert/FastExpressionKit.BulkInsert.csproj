@@ -16,8 +16,12 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FastExpressionKit" Version="1.1.0" />
+  <ItemGroup Condition="$(PubVer) == ''">
+    <ProjectReference Include="..\FastExpressionKit\FastExpressionKit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(PubVer) != ''">
+    <PackageReference Include="FastExpressionKit" Version="$(PubVer)" />
   </ItemGroup>
 
 </Project>

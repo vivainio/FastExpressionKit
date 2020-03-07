@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
+  <ItemGroup Condition="$(PubVer) == ''">
     <ProjectReference Include="..\FastExpressionKit.BulkInsert\FastExpressionKit.BulkInsert.csproj" />
     <ProjectReference Include="..\FastExpressionKit\FastExpressionKit.csproj" />
   </ItemGroup>
@@ -8,6 +8,10 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(PubVer) != ''">
+    <PackageReference Include="FastExpressionKit" Version="$(PubVer)" />
   </ItemGroup>
 
   <ItemGroup>
