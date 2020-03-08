@@ -7,7 +7,7 @@ import os,shutil
 LOCAL_FEED = Path(r".\dev\localnuget").absolute()
 
 projects = ["FastExpressionKit", "FastExpressionKit.BulkInsert"]
-version = "1.2.0.4"
+version = "1.3.0"
 def c(s):
     print(">",s)
     err = os.system(s)
