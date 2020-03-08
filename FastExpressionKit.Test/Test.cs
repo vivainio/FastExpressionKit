@@ -280,7 +280,6 @@ namespace FastExpressionKitTests
             Check.ThatCode(() => { FastBulkInsertCache.Add(i1); }).Throws<ArgumentException>();
             var got = FastBulkInsertCache.Get<D>();
             Check.That(got).Equals(i1);
-
         }
     }
 }

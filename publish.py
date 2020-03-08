@@ -18,7 +18,7 @@ def nuke(pth):
         shutil.rmtree(pth)
 
 def nuget_add(pth):
-    c(f"nuget add -Verbosity detailed -Source {LOCAL_FEED} {pth}")
+    c(f"dotnet nuget push -s {LOCAL_FEED} {pth}")
 
 startdir = Path(".").absolute()
 
