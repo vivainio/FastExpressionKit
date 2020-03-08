@@ -9,7 +9,9 @@ using TrivialTestRunner;
 using FastExpressionKit;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
+using AutoFixture;
 using FastExpressionKit.BulkInsert;
+using FastExpressionKit.Integration.Tests;
 using NFluent;
 
 namespace FastExpressionKitTests
@@ -281,5 +283,21 @@ namespace FastExpressionKitTests
             var got = FastBulkInsertCache.Get<D>();
             Check.That(got).Equals(i1);
         }
+
+        [Case]
+        public static void TestPropertyNameGeneration()
+        {
+            var ins = FastBulkInsertUtil.CreateBulkInserter<TestDbEntityWithoutAnnotations>(
+                TableMappingRules.UpperSnake("MY_GEN_NAME"));
+            Check.That(ins.TableName).Equals("MY_GEN_NAME");
+            var f = new Fixture();
+            var ds = f.CreateMany<TestDbEntityWithoutAnnotations>().ToArray();
+            var instr = ins.BuildInstructionsForRows(ds);
+            Check.That(instr).HasSize(3);
+            Check.That(instr[0].DbParamType).Equals(DbParameterTypeNumbers.Raw);
+            Check.That(instr[1].DbParamType).Equals(DbParameterTypeNumbers.NVarChar);
+            Check.That(instr[2].DbParamType).Equals(DbParameterTypeNumbers.Date);
+        }
+        
     }
 }

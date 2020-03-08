@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,6 +10,34 @@ using System.Text;
 namespace FastExpressionKit.BulkInsert
 {
 
+    public class TableMappingRules
+    {
+        public string TableName { get; set; }
+        public Func<PropertyInfo, string> ColumnNameGenerator { get; set; }
+
+        static string ToUnderscoreCase(string str) {
+            // xx rewrite without linq
+            return string.Concat(str.Select((x, i) => i > 0 && char.IsUpper(x) ? 
+                "_" + x.ToString() : x.ToString())).ToLower();
+        }
+
+        static string GuessColumnNameBasedOnPropertyInfo(PropertyInfo pi)
+        {
+            if ( pi.PropertyType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(pi.PropertyType))
+            {
+                return null;
+            }
+            return ToUnderscoreCase(pi.Name).ToUpperInvariant();
+        }
+
+        public static TableMappingRules UpperSnake(string tableName) =>
+            new TableMappingRules
+            {
+                TableName = tableName,
+                ColumnNameGenerator = GuessColumnNameBasedOnPropertyInfo
+            };
+    }
+    
     // these are compatible with a proprietary database driver
     public enum DbParameterTypeNumbers
     {
@@ -58,6 +87,11 @@ namespace FastExpressionKit.BulkInsert
             for (var i=0; i < Properties.Count; i++)
             {
                 var prop = Properties[i];
+                var ok = FastBulkInsertUtil.ParameterTypeMap.TryGetValue(prop.FieldType, out var paramType);
+                if (!ok)
+                {
+                    throw new InvalidOperationException($"Can't map property {prop.Name} type: {prop.FieldType.FullName}");
+                }
                 instructions[i] = new BulkInsertInstructions
                 {
                     DbParamType = FastBulkInsertUtil.ParameterTypeMap[prop.FieldType],
@@ -102,31 +136,22 @@ namespace FastExpressionKit.BulkInsert
             [typeof(decimal?)] = DbParameterTypeNumbers.Number,
         };
 
-        private static string ToUnderscoreCase(string str) {
-            // xx rewrite without linq
-            return string.Concat(str.Select((x, i) => i > 0 && char.IsUpper(x) ? 
-                "_" + x.ToString() : x.ToString())).ToLower();
-        }
 
-        public static string GuessColumnNameBasedOnPropertyInfo(PropertyInfo prop)
-        {
-            return ToUnderscoreCase(prop.Name);
-        }
 
         // you should use this to create inserters BUT you should cache them
-        // if explicit table name is used, column names are guessed
+        // if rules are used, column names are guessed
         // yeah use [Table] and [Column] instead
-        public static FastBulkInserter<TEntity> CreateBulkInserter<TEntity>(string exlicitTableName = null)
+        public static FastBulkInserter<TEntity> CreateBulkInserter<TEntity>(TableMappingRules rules = null)
         {
-            var guessingMode = exlicitTableName != null;
+            var guessingMode = rules != null;
             var props = ReflectionHelper.GetProps<TEntity>();
 
             var tableAttrs = typeof(TEntity).GetCustomAttributes(typeof(TableAttribute), true);
             string tableName = null;
-            if (exlicitTableName != null)
+            
+            if (rules != null)
             {
-                tableName = exlicitTableName;
-
+                tableName = rules.TableName;
             }
             else
             {
@@ -158,7 +183,12 @@ namespace FastExpressionKit.BulkInsert
 
                 if (guessingMode)
                 {
-                    columnName = GuessColumnNameBasedOnPropertyInfo(prop);
+                    columnName = rules.ColumnNameGenerator(prop);
+                    // way to skip property - return null from name generator
+                    if (columnName == null)
+                    {
+                        continue;
+                    }
                 }
 
                 var paramNameInQuery = ":B" + index.ToString();
