@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
@@ -16,13 +14,13 @@ namespace FastExpressionKit.BulkInsert
         public string TableName { get; set; }
         public Func<PropertyInfo, string> ColumnNameGenerator { get; set; }
 
-        static string ToUnderscoreCase(string str) {
+        public static string ToUnderscoreCase(string str) {
             // xx rewrite without linq
             return string.Concat(str.Select((x, i) => i > 0 && char.IsUpper(x) ? 
                 "_" + x.ToString() : x.ToString())).ToLower();
         }
 
-        static string GuessColumnNameBasedOnPropertyInfo(PropertyInfo pi)
+        public static string GuessColumnNameBasedOnPropertyInfo(PropertyInfo pi)
         {
             return ToUnderscoreCase(pi.Name).ToUpperInvariant();
         }

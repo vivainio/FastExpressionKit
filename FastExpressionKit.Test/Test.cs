@@ -301,6 +301,31 @@ namespace FastExpressionKitTests
             Check.That(instr[3].DbParamType).Equals(DbParameterTypeNumbers.Number);
 
         }
-        
+
+        [fCase]
+        public static void TestOwnPropertyRules()
+        {
+            var rules = new TableMappingRules
+            {
+                TableName = "MY_TAB",
+                ColumnNameGenerator = pi =>
+                {
+                    if (pi.Name == "MyString")
+                    {
+                        // strip this out
+                        return null;
+                    }
+                    var guessed = TableMappingRules.GuessColumnNameBasedOnPropertyInfo(pi);
+                    return guessed == "MY_DATE" ? "MY_CHANGED_DATE" : guessed;
+                }
+            };
+            var ins =
+                FastBulkInsertUtil.CreateBulkInserter<TestDbEntityWithoutAnnotations>(
+                    rules);
+
+            Check.That(ins.TableName).Equals("MY_TAB");
+            Check.That(ins.Properties).HasSize(3);
+            Check.That(ins.Properties[1].DbColumnName).Equals("MY_CHANGED_DATE");
+        }
     }
 }
