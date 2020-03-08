@@ -293,10 +293,13 @@ namespace FastExpressionKitTests
             var f = new Fixture();
             var ds = f.CreateMany<TestDbEntityWithoutAnnotations>().ToArray();
             var instr = ins.BuildInstructionsForRows(ds);
-            Check.That(instr).HasSize(3);
+            Check.That(instr).HasSize(4);
             Check.That(instr[0].DbParamType).Equals(DbParameterTypeNumbers.Raw);
             Check.That(instr[1].DbParamType).Equals(DbParameterTypeNumbers.NVarChar);
             Check.That(instr[2].DbParamType).Equals(DbParameterTypeNumbers.Date);
+            // enum is number
+            Check.That(instr[3].DbParamType).Equals(DbParameterTypeNumbers.Number);
+
         }
         
     }

@@ -90,11 +90,18 @@ namespace FastExpressionKit.BulkInsert
                 var ok = FastBulkInsertUtil.ParameterTypeMap.TryGetValue(prop.FieldType, out var paramType);
                 if (!ok)
                 {
-                    throw new InvalidOperationException($"Can't map property {prop.Name} type: {prop.FieldType.FullName}");
+                    if (prop.FieldType.IsEnum)
+                    {
+                        paramType = DbParameterTypeNumbers.Number;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Can't map property {prop.Name} type: {prop.FieldType.FullName}");
+                    }
                 }
                 instructions[i] = new BulkInsertInstructions
                 {
-                    DbParamType = FastBulkInsertUtil.ParameterTypeMap[prop.FieldType],
+                    DbParamType = paramType,
                     ParameterName = prop.ParameterNameInQuery,
                     Values = objs[i]
                 };

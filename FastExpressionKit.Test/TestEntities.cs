@@ -20,7 +20,12 @@ namespace FastExpressionKit.Integration.Tests
         public DateTime MyDate { get; set; }
         
     }
-    
+
+    public enum SomeEnum
+    {
+        One = 1,
+        Three = 3
+    }
     public class TestDbEntityWithoutAnnotations
     {
         public Guid MyId { get; set; }
@@ -32,6 +37,7 @@ namespace FastExpressionKit.Integration.Tests
         }
 
         public DateTime MyDate { get; set; }
+        public SomeEnum MyEnum { get; set; }
 
     }
     
