@@ -26,6 +26,11 @@ namespace FastExpressionKit.Integration.Tests
         One = 1,
         Three = 3
     }
+
+    public class SomeOtherEntity
+    {
+        public string Id { get; set; }
+    }
     public class TestDbEntityWithoutAnnotations
     {
         public Guid MyId { get; set; }
@@ -37,7 +42,10 @@ namespace FastExpressionKit.Integration.Tests
         }
 
         public DateTime MyDate { get; set; }
+        public SomeOtherEntity NavigationProp { get; set; }
+
         public SomeEnum MyEnum { get; set; }
+
 
     }
     

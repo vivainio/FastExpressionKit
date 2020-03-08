@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -23,10 +24,6 @@ namespace FastExpressionKit.BulkInsert
 
         static string GuessColumnNameBasedOnPropertyInfo(PropertyInfo pi)
         {
-            if ( pi.PropertyType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(pi.PropertyType))
-            {
-                return null;
-            }
             return ToUnderscoreCase(pi.Name).ToUpperInvariant();
         }
 
@@ -41,6 +38,7 @@ namespace FastExpressionKit.BulkInsert
     // these are compatible with a proprietary database driver
     public enum DbParameterTypeNumbers
     {
+        Unknown = 0,
         Date = 8,
         Double = 9,
         Float = 10,
@@ -52,16 +50,19 @@ namespace FastExpressionKit.BulkInsert
         VarChar = 28,
     }
 
+    [DebuggerDisplay("{Name}: {FieldType}")]
     public class MapperPropertyData
     {
         public string Name;
         public string DbColumnName;
         public string ParameterNameInQuery;
         public Type FieldType { get; set; }
+        public DbParameterTypeNumbers RecommendedDbType { get; set; }
     }
 
     // you can use this to construct DbParameter objects for your db driver
     // e.g. OracleParameter
+    [DebuggerDisplay("{ParameterName}: {DbParamType} count={Values.Length}")]
     public class BulkInsertInstructions
     {
         public object[] Values { get; set; }
@@ -87,21 +88,9 @@ namespace FastExpressionKit.BulkInsert
             for (var i=0; i < Properties.Count; i++)
             {
                 var prop = Properties[i];
-                var ok = FastBulkInsertUtil.ParameterTypeMap.TryGetValue(prop.FieldType, out var paramType);
-                if (!ok)
-                {
-                    if (prop.FieldType.IsEnum)
-                    {
-                        paramType = DbParameterTypeNumbers.Number;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Can't map property {prop.Name} type: {prop.FieldType.FullName}");
-                    }
-                }
                 instructions[i] = new BulkInsertInstructions
                 {
-                    DbParamType = paramType,
+                    DbParamType = prop.RecommendedDbType,
                     ParameterName = prop.ParameterNameInQuery,
                     Values = objs[i]
                 };
@@ -188,10 +177,23 @@ namespace FastExpressionKit.BulkInsert
                     continue;
                 }
 
+                var typeOk = ParameterTypeMap.TryGetValue(prop.PropertyType, out var recommendedParamType);
+                if (!typeOk && prop.PropertyType.IsEnum)
+                {
+                    typeOk = true;
+                    recommendedParamType = DbParameterTypeNumbers.Number;
+                }
+
+                if (!typeOk)
+                {
+                    // skip unknown parameters. TODO: log this?
+                    // example of skipped types: collections, navigation props etc
+                    continue;
+                }
                 if (guessingMode)
                 {
                     columnName = rules.ColumnNameGenerator(prop);
-                    // way to skip property - return null from name generator
+                    // a way to skip property - return null from name generator
                     if (columnName == null)
                     {
                         continue;
@@ -203,7 +205,8 @@ namespace FastExpressionKit.BulkInsert
                     Name = prop.Name,
                     DbColumnName = columnName,
                     FieldType = prop.PropertyType,
-                    ParameterNameInQuery = paramNameInQuery
+                    ParameterNameInQuery = paramNameInQuery,
+                    RecommendedDbType = recommendedParamType
 
                 });
                 mappedColumnNames.Add(prop.Name);
