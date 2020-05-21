@@ -91,33 +91,42 @@ namespace FastExpressionKit
     public class FieldHasher<T1>
     {
         public readonly PropertyInfo[] Props;
+    
         private readonly Func<T1, int> expr;
-
-        private Func<T1, int> CreateExpression(PropertyInfo[] fields)
+        
+        private Func<T1, int> CreateExpression(PropertyInfo[] fields, Func<MemberExpression, Expression> stringNormalizer)
         {
             int prim = 17;
             var t1param = EE.Param<T1>("obj");
-
             var result = EE.Param<int>("r");
-            
             var ass = Expression.Assign(result, Expression.Constant(prim));
-
             var block = new List<Expression>();
             //block.Add(result);
             block.Add(ass);
-            
 
             block.AddRange(fields.Select(pi =>
             {
                 var dotted = t1param.Dot(pi.Name);
-                if (pi.PropertyType.IsValueType)
+                var propType = pi.PropertyType;
+                if (propType.IsValueType)
                 {
                     return (Expression) Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim));
-
                 }
-                var iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
-                    Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim))
-                );
+
+                ConditionalExpression iffed;
+                if (propType == typeof(string) && stringNormalizer != null)
+                {
+                    var normalized = stringNormalizer(dotted);
+                    iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
+                        Expression.AddAssign(result, normalized.Call("GetHashCode").Mul(23).Add(prim))
+                    );
+                }
+                else
+                {
+                    iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
+                        Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim))
+                    );
+                }
                 return iffed;
             }));
 
@@ -130,7 +139,12 @@ namespace FastExpressionKit
         public FieldHasher(PropertyInfo[] props)
         {
             this.Props = props;
-            this.expr = CreateExpression(props);
+            this.expr = CreateExpression(props, null);
+        }
+        public FieldHasher(PropertyInfo[] props, Func<MemberExpression, Expression> stringNormalizer)
+        {
+            this.Props = props;
+            this.expr = CreateExpression(props, stringNormalizer);
         }
 
         public int ComputeHash(T1 obj) => expr.Invoke(obj);

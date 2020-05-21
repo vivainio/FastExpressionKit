@@ -311,13 +311,20 @@ namespace FastExpressionKitTests
         public static void TestHasher()
         {
             
-            var h = new FieldHasher<C>(ReflectionHelper.GetProps<C>());
+            var h = new FieldHasher<C>(ReflectionHelper.GetProps<C>(), (e) =>
+            {
+                var trim = typeof(string).GetMethod("Trim", new Type[] {});
+                var call = Expression.Call(e, trim);
+                return call;
+            });    
             var o = new C();
             var l = new List<int>();
 
-            void Compute()
+            int Compute()
             {
-                l.Add(h.ComputeHash(o));
+                var val = h.ComputeHash(o); 
+                l.Add(val);
+                return val;
             }
             
             Compute();
@@ -330,6 +337,12 @@ namespace FastExpressionKitTests
             o.mynullable = SomeDate;
             Compute();
             Check.That(l.Distinct()).HasSize(l.Count);
+
+            o.s = "   hello ";
+            var hashWithSpaces = Compute();
+            o.s = "hello";
+            var hashWithoutSpaces = Compute();
+            Check.That(hashWithSpaces).Equals(hashWithoutSpaces);
         }
 
         [Case]
