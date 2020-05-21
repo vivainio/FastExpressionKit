@@ -61,16 +61,18 @@ namespace FastExpressionKitTests
             {
                 action();
             }
+
             WriteLine("{0}: {1}", description, (sw.ElapsedMilliseconds * 1000) / (float) n);
 
         }
+
         [Case]
         public static void Benchmark()
         {
-            var c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now };
-            var d1 = new D() { a = 666, b = 8, c = 9, date = DateTime.Now, mynullable = DateTime.Now };
+            var c1 = new C() {a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now};
+            var d1 = new D() {a = 666, b = 8, c = 9, date = DateTime.Now, mynullable = DateTime.Now};
 
-            var fields = new[] { "a", "b" };
+            var fields = new[] {"a", "b"};
 
 
             WriteLine("Stats (microseconds) per iteration");
@@ -111,10 +113,7 @@ namespace FastExpressionKitTests
             });
 
             var bigd = new Differ<BigDto, BigDto>(bigpropnames);
-            RepeatBench("Compare large objects", 10000, () =>
-            {
-                bigd.Compare(big1, big2);
-            });
+            RepeatBench("Compare large objects", 10000, () => { bigd.Compare(big1, big2); });
 
             var types = ReflectionHelper.CollectProps<BigDto>();
             var e4 = ReflectionHelper.GetExtractorFor<BigDto, int>(types);
@@ -133,8 +132,8 @@ namespace FastExpressionKitTests
             RepeatBench("Extract fields from large object, convert to dict, naive", 10000, () =>
             {
                 var pd = e4.ResultsAsDict(e4.Extract(big1).Select(i => i.ToString()).ToList())
-                       .Union(e5.ResultsAsDict(e5.Extract(big1).Select(e => e.ToString()).ToList()))
-                       .Union(e6.ResultsAsDict(e6.Extract(big1).Select(e => e.ToString()).ToList()));
+                    .Union(e5.ResultsAsDict(e5.Extract(big1).Select(e => e.ToString()).ToList()))
+                    .Union(e6.ResultsAsDict(e6.Extract(big1).Select(e => e.ToString()).ToList()));
             });
 
             var boxedExtract = new FieldExtract<BigDto, object>(bigpropnames);
@@ -173,20 +172,18 @@ namespace FastExpressionKitTests
 
 
             var copier = new FieldCopier<BigDto, BigDto>(bigpropnames);
-            RepeatBench("Copy big object", 100000, () =>
-            {
-                copier.Copy(big1, big2);
-            });
+            RepeatBench("Copy big object", 100000, () => { copier.Copy(big1, big2); });
 
         }
 
         static DateTime SomeDate = new DateTime(2020, 2, 24);
+
         // test data for small objects
-        static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one" };
-        static C c2 = new C() { a = 100, b = 12, mynullable = null, s ="two" };
-        static D d1 = new D() { a = 666, b = 12, c = 123, date = SomeDate, NoTable = "not mapped", mynullable = null };
-        static D d2 = new D() { a = 100, b = 12, c = 223 , date = SomeDate, mynullable = SomeDate};
-        static string[] fields = new[] { "a", "b" };
+        static C c1 = new C() {a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one"};
+        static C c2 = new C() {a = 100, b = 12, mynullable = null, s = "two"};
+        static D d1 = new D() {a = 666, b = 12, c = 123, date = SomeDate, NoTable = "not mapped", mynullable = null};
+        static D d2 = new D() {a = 100, b = 12, c = 223, date = SomeDate, mynullable = SomeDate};
+        static string[] fields = new[] {"a", "b"};
 
         [Case]
         public static void TestCopier()
@@ -217,6 +214,7 @@ namespace FastExpressionKitTests
             tryit(c1);
             tryit(c2);
         }
+
         [Case]
         public static void TestFieldExtract()
         {
@@ -227,33 +225,40 @@ namespace FastExpressionKitTests
             {
                 var fails = new FieldExtract<C, string>(fields);
             }
-            catch (InvalidOperationException) { };
+            catch (InvalidOperationException)
+            {
+            }
 
-            var ee = new FieldExtract<C, DateTime?>(new[] { "mynullable" });
+            ;
+
+            var ee = new FieldExtract<C, DateTime?>(new[] {"mynullable"});
             var r = ee.Extract(c1);
 
             //var e2 = new FieldExtract<C, object>(fields);
             //e2.Extract(c1);
 
-            var e3 = new FieldExtract<C, DateTime>(new[] { "date" });
+            var e3 = new FieldExtract<C, DateTime>(new[] {"date"});
             var r3 = e3.Extract(c1);
         }
+
         [Case]
-        public static void TestExtractToArrays() {
-            var extractor = new FieldExtract<C, object>(new[] { "a", "b", "s"});
+        public static void TestExtractToArrays()
+        {
+            var extractor = new FieldExtract<C, object>(new[] {"a", "b", "s"});
             var results = extractor.Extract(c1);
-            var extracted = FieldExtractUtil.ExtractToObjectArrays(extractor, new[] { c1, c2, c1, c2} );
+            var extracted = FieldExtractUtil.ExtractToObjectArrays(extractor, new[] {c1, c2, c1, c2});
             var serialized = JsonConvert.SerializeObject(extracted);
             Assert.AreEqual(serialized, @"[[100,100,100,100],[12,12,12,12],[""one"",""two"",""one"",""two""]]");
         }
+
         [Case]
         public static void DifferSmall()
         {
-            var differ = new Differ<C, C>(new[] { "a", "b" });
+            var differ = new Differ<C, C>(new[] {"a", "b"});
             var res = differ.Compare(c1, c2);
 
             // compare different types!
-            var differ2 = new Differ<C, D>(new[] { "a", "b" });
+            var differ2 = new Differ<C, D>(new[] {"a", "b"});
             res = differ2.Compare(c1, d1);
         }
 
@@ -264,12 +269,12 @@ namespace FastExpressionKitTests
             //Assert.Contains("a", writeable);
             Assert.IsTrue(!writeable.Contains("readOnly"));
         }
-        
+
         [Case]
         public static void DbBulkInsert()
         {
             var inserter = FastBulkInsertUtil.CreateBulkInserter<D>();
-            var dtos = new[] { d1, d2 };
+            var dtos = new[] {d1, d2};
             var instructions = inserter.BuildInstructionsForRows(dtos);
             Check.That(instructions).CountIs(5);
         }
@@ -303,6 +308,31 @@ namespace FastExpressionKitTests
         }
 
         [fCase]
+        public static void TestHasher()
+        {
+            
+            var h = new FieldHasher<C>(ReflectionHelper.GetProps<C>());
+            var o = new C();
+            var l = new List<int>();
+
+            void Compute()
+            {
+                l.Add(h.ComputeHash(o));
+            }
+            
+            l.Add(h.ComputeHash(o));
+            o.a = 1;
+            Compute();
+            o.b = 1;
+            Compute();
+            o.date = SomeDate;
+            Compute();
+            o.mynullable = SomeDate;
+            Compute();
+            Check.That(l.Distinct()).HasSize(l.Count);
+        }
+
+        [Case]
         public static void TestOwnPropertyRules()
         {
             var rules = new TableMappingRules

@@ -19,11 +19,20 @@ namespace FastExpressionKit
         public static MemberExpression Dot(this Expression exp, string fieldName) => Expression.PropertyOrField(exp, fieldName);
         public static Expression IsEq(this Expression left, Expression right) => Expression.Equal(left, right);
         public static Expression Val<T>(T value) => Expression.Constant(value, typeof(T));
+        
+        public static Expression Mul(this Expression left, int right) => Expression.Multiply(left, Expression.Constant(right));
+        public static Expression Add(this Expression left, int right) => Expression.Add(left, Expression.Constant(right));
+
+        public static Expression Mul(this Expression left, Expression right) => Expression.Multiply(left, right);
+        public static Expression Let(this Expression left, Expression right) => Expression.Assign(left, right);
         public static MethodInfo Method(Expression<Action> exp) =>
             (exp.Body as MethodCallExpression).Method;
         public static Expression Box(Expression e) => Expression.Convert(e, typeof(object));
 
-     }
+        public static Expression Call(this Expression left, string methodName) => 
+            Expression.Call(left, typeof(object).GetMethod(methodName) );
+
+    }
 
     public class Differ<T1, T2>
     {
@@ -79,6 +88,55 @@ namespace FastExpressionKit
         public void Copy(TTarget left, TSrc right) => assignExpr.Invoke(left, right);
     }
 
+    public class FieldHasher<T1>
+    {
+        public readonly PropertyInfo[] Props;
+        private readonly Func<T1, int> expr;
+
+        private Func<T1, int> CreateExpression(PropertyInfo[] fields)
+        {
+            int prim = 17;
+            var t1param = EE.Param<T1>("obj");
+
+            var result = EE.Param<int>("r");
+            
+            var ass = Expression.Assign(result, Expression.Constant(prim));
+
+            var block = new List<Expression>();
+            //block.Add(result);
+            block.Add(ass);
+            
+
+            block.AddRange(fields.Select(pi =>
+            {
+                var dotted = t1param.Dot(pi.Name);
+                if (pi.PropertyType.IsValueType)
+                {
+                    return (Expression) Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim));
+
+                }
+                var iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
+                    Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim))
+                );
+                return iffed;
+            }));
+
+            block.Add(result);
+            var eblock = Expression.Block(new [] { result} , block);
+            var l = Expression.Lambda<Func<T1, int>>(eblock, t1param);
+            return l.Compile();
+        }
+
+        public FieldHasher(PropertyInfo[] props)
+        {
+            this.Props = props;
+            this.expr = CreateExpression(props);
+        }
+
+        public int ComputeHash(T1 obj) => expr.Invoke(obj);
+
+    }
+    
     public class FieldExtract<T1, TVal>
     {
         public readonly string[] Props;
