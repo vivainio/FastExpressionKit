@@ -307,7 +307,7 @@ namespace FastExpressionKitTests
 
         }
 
-        [fCase]
+        [Case]
         public static void TestHasher()
         {
             
@@ -320,7 +320,7 @@ namespace FastExpressionKitTests
                 l.Add(h.ComputeHash(o));
             }
             
-            l.Add(h.ComputeHash(o));
+            Compute();
             o.a = 1;
             Compute();
             o.b = 1;
