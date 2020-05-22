@@ -22,6 +22,7 @@ namespace FastExpressionKit
         
         public static Expression Mul(this Expression left, int right) => Expression.Multiply(left, Expression.Constant(right));
         public static Expression Add(this Expression left, int right) => Expression.Add(left, Expression.Constant(right));
+        public static Expression Add(this Expression left, Expression right) => Expression.Add(left, right);
 
         public static Expression Mul(this Expression left, Expression right) => Expression.Multiply(left, right);
         public static Expression Let(this Expression left, Expression right) => Expression.Assign(left, right);
@@ -97,6 +98,7 @@ namespace FastExpressionKit
         private Func<T1, int> CreateExpression(PropertyInfo[] fields, Func<MemberExpression, Expression> stringNormalizer)
         {
             int prim = 17;
+            int prim2 = 23;
             var t1param = EE.Param<T1>("obj");
             var result = EE.Param<int>("r");
             var ass = Expression.Assign(result, Expression.Constant(prim));
@@ -106,27 +108,29 @@ namespace FastExpressionKit
 
             block.AddRange(fields.Select(pi =>
             {
+                
                 var dotted = t1param.Dot(pi.Name);
                 var propType = pi.PropertyType;
                 if (propType.IsValueType)
                 {
-                    return (Expression) Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim));
+                    return (Expression) Expression.AddAssign(result,
+                        result.Mul(23).Add(dotted.Call("GetHashCode")));
                 }
 
-                ConditionalExpression iffed;
+                Expression normalized;
                 if (propType == typeof(string) && stringNormalizer != null)
                 {
-                    var normalized = stringNormalizer(dotted);
-                    iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
-                        Expression.AddAssign(result, normalized.Call("GetHashCode").Mul(23).Add(prim))
-                    );
+                    normalized = stringNormalizer(dotted);
                 }
                 else
                 {
-                    iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
-                        Expression.AddAssign(result, dotted.Call("GetHashCode").Mul(23).Add(prim))
-                    );
+                    normalized = dotted;
+
                 }
+
+                var iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
+                    Expression.AddAssign(result,
+                        result.Mul(prim2).Add(normalized.Call("GetHashCode"))));
                 return iffed;
             }));
 
@@ -226,7 +230,8 @@ namespace FastExpressionKit
         // create cache for GetExtractorFor by reflecting on object
         public static PropertyInfo[] GetProps<T>() => typeof(T)
             .GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
+        public static PropertyInfo[] GetPropsByNames<T>(IEnumerable<string> propNames) =>
+            propNames.Select(i => typeof(T).GetProperty(i)).ToArray();
 
         public static string[] PropNames<T>() => GetProps<T>().Select(p => p.Name).ToArray();
 
