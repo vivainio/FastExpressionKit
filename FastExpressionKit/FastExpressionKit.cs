@@ -21,6 +21,8 @@ namespace FastExpressionKit
         public static Expression Val<T>(T value) => Expression.Constant(value, typeof(T));
         
         public static Expression Mul(this Expression left, int right) => Expression.Multiply(left, Expression.Constant(right));
+        public static Expression MulAssign(this Expression left, int right) => Expression.MultiplyAssign(left, Expression.Constant(right));
+
         public static Expression Add(this Expression left, int right) => Expression.Add(left, Expression.Constant(right));
         public static Expression Add(this Expression left, Expression right) => Expression.Add(left, right);
 
@@ -99,17 +101,17 @@ namespace FastExpressionKit
         
         {
             /*
-                $hash = 17;
-                $hash += $hash * 23 + .Call ($obj.a).GetHashCode();
-                $hash += $hash * 23 + .Call ($obj.b).GetHashCode();
-                .If ($obj.s != null) {
-                    $hash += $hash * 23 + .Call (.Call ($obj.s).Trim()).GetHashCode()
-                } .Else {
-                    .Default(System.Void)
-                };
-                $hash += $hash * 23 + .Call ($obj.date).GetHashCode();
-                $hash += $hash * 23 + .Call ($obj.mynullable).GetHashCode();
-                $hash
+            $hash = 17;
+            $hash += $hash * 23 + .Call ($obj.a).GetHashCode();
+            $hash += $hash * 23 + .Call ($obj.b).GetHashCode();
+            .If ($obj.s != null) {
+                $hash += $hash * 23 + .Call (.Call ($obj.s).Trim()).GetHashCode()
+            } .Else {
+                $hash *= 23
+            };
+            $hash += $hash * 23 + .Call ($obj.date).GetHashCode();
+            $hash += $hash * 23 + .Call ($obj.mynullable).GetHashCode();
+            $hash
             */
             const int prim = 17;
             const int prim2 = 23;
@@ -133,9 +135,11 @@ namespace FastExpressionKit
                     ? stringNormalizer(dotted)
                     : dotted;
 
-                var iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
+                var iffed = Expression.IfThenElse(Expression.NotEqual(dotted, Expression.Constant(null)),
                     Expression.AddAssign(resultHash,
-                        resultHash.Mul(prim2).Add(normalized.Call("GetHashCode"))));
+                        resultHash.Mul(prim2).Add(normalized.Call("GetHashCode"))),
+                    resultHash.MulAssign(prim2));
+                    
                 return iffed;
             }));
 
