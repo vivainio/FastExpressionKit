@@ -96,46 +96,51 @@ namespace FastExpressionKit
         private readonly Func<T1, int> expr;
         
         private Func<T1, int> CreateExpression(PropertyInfo[] fields, Func<MemberExpression, Expression> stringNormalizer)
+        
         {
-            int prim = 17;
-            int prim2 = 23;
+            /*
+                $hash = 17;
+                $hash += $hash * 23 + .Call ($obj.a).GetHashCode();
+                $hash += $hash * 23 + .Call ($obj.b).GetHashCode();
+                .If ($obj.s != null) {
+                    $hash += $hash * 23 + .Call (.Call ($obj.s).Trim()).GetHashCode()
+                } .Else {
+                    .Default(System.Void)
+                };
+                $hash += $hash * 23 + .Call ($obj.date).GetHashCode();
+                $hash += $hash * 23 + .Call ($obj.mynullable).GetHashCode();
+                $hash
+            */
+            const int prim = 17;
+            const int prim2 = 23;
             var t1param = EE.Param<T1>("obj");
-            var result = EE.Param<int>("r");
-            var ass = Expression.Assign(result, Expression.Constant(prim));
+            var resultHash = EE.Param<int>("hash");
+            var ass = Expression.Assign(resultHash, Expression.Constant(prim));
             var block = new List<Expression>();
-            //block.Add(result);
             block.Add(ass);
 
             block.AddRange(fields.Select(pi =>
             {
-                
                 var dotted = t1param.Dot(pi.Name);
                 var propType = pi.PropertyType;
                 if (propType.IsValueType)
                 {
-                    return (Expression) Expression.AddAssign(result,
-                        result.Mul(23).Add(dotted.Call("GetHashCode")));
+                    return (Expression) Expression.AddAssign(resultHash,
+                        resultHash.Mul(prim2).Add(dotted.Call("GetHashCode")));
                 }
 
-                Expression normalized;
-                if (propType == typeof(string) && stringNormalizer != null)
-                {
-                    normalized = stringNormalizer(dotted);
-                }
-                else
-                {
-                    normalized = dotted;
-
-                }
+                var normalized = propType == typeof(string) && stringNormalizer != null
+                    ? stringNormalizer(dotted)
+                    : dotted;
 
                 var iffed = Expression.IfThen(Expression.NotEqual(dotted, Expression.Constant(null)),
-                    Expression.AddAssign(result,
-                        result.Mul(prim2).Add(normalized.Call("GetHashCode"))));
+                    Expression.AddAssign(resultHash,
+                        resultHash.Mul(prim2).Add(normalized.Call("GetHashCode"))));
                 return iffed;
             }));
 
-            block.Add(result);
-            var eblock = Expression.Block(new [] { result} , block);
+            block.Add(resultHash);
+            var eblock = Expression.Block(new [] { resultHash} , block);
             var l = Expression.Lambda<Func<T1, int>>(eblock, t1param);
             return l.Compile();
         }
