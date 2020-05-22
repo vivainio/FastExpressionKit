@@ -6,8 +6,11 @@ import os,shutil
 
 LOCAL_FEED = Path(r".\dev\localnuget").absolute()
 
+if not LOCAL_FEED.exists():
+    os.makedirs(LOCAL_FEED)
+
 projects = ["FastExpressionKit", "FastExpressionKit.BulkInsert"]
-version = "1.3.0"
+version = "1.4.0"
 def c(s):
     print(">",s)
     err = os.system(s)
