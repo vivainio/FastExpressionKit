@@ -160,7 +160,7 @@ namespace FastExpressionKit
             this.expr = CreateExpression(props, stringNormalizer);
         }
 
-        public int ComputeHash(T1 obj) => expr.Invoke(obj);
+        public int ComputeHash(T1 obj) => unchecked(expr.Invoke(obj));
 
     }
     
