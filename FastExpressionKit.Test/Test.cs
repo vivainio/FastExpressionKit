@@ -307,16 +307,21 @@ namespace FastExpressionKitTests
 
         }
 
-        [Case]
+        [fCase]
         public static void TestHasher()
         {
-            
-            var h = new FieldHasher<C>(ReflectionHelper.GetProps<C>(), (e) =>
+
+            var opts = new FieldHasherOptions
             {
-                var trim = typeof(string).GetMethod("Trim", new Type[] {});
-                var call = Expression.Call(e, trim);
-                return call;
-            });    
+                ZeroIfNulls = true,
+                StringNormalizer = (e) =>
+                {
+                    var trim = typeof(string).GetMethod("Trim", new Type[] {});
+                    var call = Expression.Call(e, trim);
+                    return call;
+                }
+            };
+            var h = new FieldHasher<C>(ReflectionHelper.GetProps<C>(), opts);
             var o = new C();
             var l = new List<int>();
 
@@ -326,15 +331,26 @@ namespace FastExpressionKitTests
                 l.Add(val);
                 return val;
             }
-            
-            Compute();
+
             o.a = 1;
+            Compute();
+            o.mynullable = SomeDate;
+            Compute();
+
+            Check.That(l).ContainsExactly(0, 0);
+            l.Clear();
+
+            o.s = "notnull";
+            Compute();
+            
+            
+            // now it starts giving nonzero
+            Check.That(l[0]).IsNotZero();
+            o.s = "t";
             Compute();
             o.b = 1;
             Compute();
             o.date = SomeDate;
-            Compute();
-            o.mynullable = SomeDate;
             Compute();
             Check.That(l.Distinct()).HasSize(l.Count);
 

@@ -31,6 +31,7 @@ namespace FastExpressionKit
         public static MethodInfo Method(Expression<Action> exp) =>
             (exp.Body as MethodCallExpression).Method;
         public static Expression Box(Expression e) => Expression.Convert(e, typeof(object));
+        public static Expression NotNull(this MemberExpression left) => Expression.NotEqual(left, Expression.Constant(null));
 
         public static Expression Call(this Expression left, string methodName) => 
             Expression.Call(left, typeof(object).GetMethod(methodName) );
@@ -91,14 +92,20 @@ namespace FastExpressionKit
         public void Copy(TTarget left, TSrc right) => assignExpr.Invoke(left, right);
     }
 
+    public class FieldHasherOptions
+    {
+        public Func<MemberExpression, Expression> StringNormalizer { get; set; }
+        // early evaluate to zero if any nulls found
+        public bool ZeroIfNulls { get; set; } = false;
+
+    }
     public class FieldHasher<T1>
     {
         public readonly PropertyInfo[] Props;
     
         private readonly Func<T1, int> expr;
-        
-        private Func<T1, int> CreateExpression(PropertyInfo[] fields, Func<MemberExpression, Expression> stringNormalizer)
-        
+
+        private Func<T1, int> CreateExpression(PropertyInfo[] fields, FieldHasherOptions options)
         {
             /*
             $hash = 17;
@@ -120,30 +127,49 @@ namespace FastExpressionKit
             var ass = Expression.Assign(resultHash, Expression.Constant(prim));
             var block = new List<Expression>();
             block.Add(ass);
+            var returnLabel = Expression.Label(typeof(int));
+
+            var whenNull = options.ZeroIfNulls ? Expression.Return(returnLabel, Expression.Constant(0)) 
+                : resultHash.MulAssign(prim2);
 
             block.AddRange(fields.Select(pi =>
             {
                 var dotted = t1param.Dot(pi.Name);
                 var propType = pi.PropertyType;
+
+                var addAssignHashCode = Expression.AddAssign(resultHash,
+                    resultHash.Mul(prim2).Add(dotted.Call("GetHashCode")));
+                
+                // nullable
+                if (options.ZeroIfNulls && Nullable.GetUnderlyingType(propType) != null)
+                {
+                    return Expression.IfThenElse(
+                        dotted.NotNull(),
+                        addAssignHashCode,
+                        whenNull);
+                }
+                
+                // value type but not nullabl
                 if (propType.IsValueType)
                 {
-                    return (Expression) Expression.AddAssign(resultHash,
-                        resultHash.Mul(prim2).Add(dotted.Call("GetHashCode")));
+                    return (Expression) addAssignHashCode;
                 }
 
-                var normalized = propType == typeof(string) && stringNormalizer != null
-                    ? stringNormalizer(dotted)
+                
+                // normalized string
+                var normalized = propType == typeof(string) && options.StringNormalizer != null
+                    ? options.StringNormalizer(dotted)
                     : dotted;
 
-                var iffed = Expression.IfThenElse(Expression.NotEqual(dotted, Expression.Constant(null)),
+                var iffed = Expression.IfThenElse(dotted.NotNull(),
                     Expression.AddAssign(resultHash,
                         resultHash.Mul(prim2).Add(normalized.Call("GetHashCode"))),
-                    resultHash.MulAssign(prim2));
+                    whenNull);
                     
                 return iffed;
             }));
 
-            block.Add(resultHash);
+            block.Add(Expression.Label(returnLabel, resultHash));
             var eblock = Expression.Block(new [] { resultHash} , block);
             var l = Expression.Lambda<Func<T1, int>>(eblock, t1param);
             return l.Compile();
@@ -154,12 +180,11 @@ namespace FastExpressionKit
             this.Props = props;
             this.expr = CreateExpression(props, null);
         }
-        public FieldHasher(PropertyInfo[] props, Func<MemberExpression, Expression> stringNormalizer)
+        public FieldHasher(PropertyInfo[] props, FieldHasherOptions options)
         {
             this.Props = props;
-            this.expr = CreateExpression(props, stringNormalizer);
+            this.expr = CreateExpression(props, options);
         }
-
         public int ComputeHash(T1 obj) => unchecked(expr.Invoke(obj));
 
     }
@@ -243,7 +268,6 @@ namespace FastExpressionKit
             propNames.Select(i => typeof(T).GetProperty(i)).ToArray();
 
         public static string[] PropNames<T>() => GetProps<T>().Select(p => p.Name).ToArray();
-
         public static string[] WriteablePropNames<T>() => GetProps<T>().Where(p => p.CanWrite).Select(p => p.Name).ToArray();
         public static IEnumerable<Tuple<Type, string[]>> CollectProps<T>() =>
                 GetProps<T>()
