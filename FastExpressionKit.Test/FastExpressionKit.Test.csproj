@@ -9,15 +9,12 @@
     <PackageReference Include="AutoFixture" Version="4.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="NFluent" Version="2.7.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
     <PackageReference Include="TrivialTestRunner" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition="$(PubVer) != ''">
     <PackageReference Include="FastExpressionKit" Version="$(PubVer)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>
 
   <PropertyGroup>
