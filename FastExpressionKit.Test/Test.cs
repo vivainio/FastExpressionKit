@@ -74,7 +74,6 @@ namespace FastExpressionKitTests
 
             var fields = new[] { "a", "b" };
 
-
             WriteLine("Stats (microseconds) per iteration");
 
             RepeatBench("new Differ()", 1000, () =>

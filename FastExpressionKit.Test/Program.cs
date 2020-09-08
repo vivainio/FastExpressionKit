@@ -14,7 +14,6 @@ namespace FastExpressionKit.Test
             TRunner.AddTests<FastExprKitTest>();
             await TRunner.RunTestsAsync();
             TRunner.ReportAll();
-            Console.WriteLine("ok");
             return TRunner.ExitStatus;
         }
     }
