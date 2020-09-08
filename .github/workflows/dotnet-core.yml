@@ -16,9 +16,5 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.301
-      - name: Install dependencies
-        run: dotnet resto
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
       - name: Test
         run: python3 test.py
