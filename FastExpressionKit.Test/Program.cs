@@ -1,16 +1,17 @@
 ﻿using System;
 using TrivialTestRunner;
 using FastExpressionKitTests;
+using System.Threading.Tasks;
 
 namespace FastExpressionKit.Test
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             TRunner.CrashHard = true;
             TRunner.AddTests<FastExprKitTest>();
-            TRunner.RunTests();
+            await TRunner.RunTestsAsync();
             TRunner.ReportAll();
         }
     }
