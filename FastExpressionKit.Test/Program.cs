@@ -7,12 +7,15 @@ namespace FastExpressionKit.Test
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            TRunner.CrashHard = true;
+            // use while debugging
+            // TRunner.CrashHard = true;
             TRunner.AddTests<FastExprKitTest>();
             await TRunner.RunTestsAsync();
             TRunner.ReportAll();
+            Console.WriteLine("ok");
+            return TRunner.ExitStatus;
         }
     }
 }

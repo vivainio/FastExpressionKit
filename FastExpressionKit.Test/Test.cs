@@ -20,7 +20,7 @@ namespace FastExpressionKitTests
     {
         public int a { get; set; }
         public int b { get; set; }
-        public string s {get; set;}
+        public string s { get; set; }
         public DateTime date { get; set; }
         public DateTime? mynullable { get; set; }
     }
@@ -62,17 +62,17 @@ namespace FastExpressionKitTests
                 action();
             }
 
-            WriteLine("{0}: {1}", description, (sw.ElapsedMilliseconds * 1000) / (float) n);
+            WriteLine("{0}: {1}", description, (sw.ElapsedMilliseconds * 1000) / (float)n);
 
         }
 
         [Case]
         public static void Benchmark()
         {
-            var c1 = new C() {a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now};
-            var d1 = new D() {a = 666, b = 8, c = 9, date = DateTime.Now, mynullable = DateTime.Now};
+            var c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now };
+            var d1 = new D() { a = 666, b = 8, c = 9, date = DateTime.Now, mynullable = DateTime.Now };
 
-            var fields = new[] {"a", "b"};
+            var fields = new[] { "a", "b" };
 
 
             WriteLine("Stats (microseconds) per iteration");
@@ -179,11 +179,11 @@ namespace FastExpressionKitTests
         static DateTime SomeDate = new DateTime(2020, 2, 24);
 
         // test data for small objects
-        static C c1 = new C() {a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one"};
-        static C c2 = new C() {a = 100, b = 12, mynullable = null, s = "two"};
-        static D d1 = new D() {a = 666, b = 12, c = 123, date = SomeDate, NoTable = "not mapped", mynullable = null};
-        static D d2 = new D() {a = 100, b = 12, c = 223, date = SomeDate, mynullable = SomeDate};
-        static string[] fields = new[] {"a", "b"};
+        static C c1 = new C() { a = 666, b = 12, date = DateTime.Now, mynullable = DateTime.Now, s = "one" };
+        static C c2 = new C() { a = 100, b = 12, mynullable = null, s = "two" };
+        static D d1 = new D() { a = 666, b = 12, c = 123, date = SomeDate, NoTable = "not mapped", mynullable = null };
+        static D d2 = new D() { a = 100, b = 12, c = 223, date = SomeDate, mynullable = SomeDate };
+        static string[] fields = new[] { "a", "b" };
 
         [Case]
         public static void TestCopier()
@@ -231,22 +231,22 @@ namespace FastExpressionKitTests
 
             ;
 
-            var ee = new FieldExtract<C, DateTime?>(new[] {"mynullable"});
+            var ee = new FieldExtract<C, DateTime?>(new[] { "mynullable" });
             var r = ee.Extract(c1);
 
             //var e2 = new FieldExtract<C, object>(fields);
             //e2.Extract(c1);
 
-            var e3 = new FieldExtract<C, DateTime>(new[] {"date"});
+            var e3 = new FieldExtract<C, DateTime>(new[] { "date" });
             var r3 = e3.Extract(c1);
         }
 
         [Case]
         public static void TestExtractToArrays()
         {
-            var extractor = new FieldExtract<C, object>(new[] {"a", "b", "s"});
+            var extractor = new FieldExtract<C, object>(new[] { "a", "b", "s" });
             var results = extractor.Extract(c1);
-            var extracted = FieldExtractUtil.ExtractToObjectArrays(extractor, new[] {c1, c2, c1, c2});
+            var extracted = FieldExtractUtil.ExtractToObjectArrays(extractor, new[] { c1, c2, c1, c2 });
             var serialized = JsonConvert.SerializeObject(extracted);
             Assert.AreEqual(serialized, @"[[100,100,100,100],[12,12,12,12],[""one"",""two"",""one"",""two""]]");
         }
@@ -254,11 +254,11 @@ namespace FastExpressionKitTests
         [Case]
         public static void DifferSmall()
         {
-            var differ = new Differ<C, C>(new[] {"a", "b"});
+            var differ = new Differ<C, C>(new[] { "a", "b" });
             var res = differ.Compare(c1, c2);
 
             // compare different types!
-            var differ2 = new Differ<C, D>(new[] {"a", "b"});
+            var differ2 = new Differ<C, D>(new[] { "a", "b" });
             res = differ2.Compare(c1, d1);
         }
 
@@ -274,7 +274,7 @@ namespace FastExpressionKitTests
         public static void DbBulkInsert()
         {
             var inserter = FastBulkInsertUtil.CreateBulkInserter<D>();
-            var dtos = new[] {d1, d2};
+            var dtos = new[] { d1, d2 };
             var instructions = inserter.BuildInstructionsForRows(dtos);
             Check.That(instructions).CountIs(5);
         }
@@ -307,7 +307,7 @@ namespace FastExpressionKitTests
 
         }
 
-        [fCase]
+        [Case]
         public static void TestHasher()
         {
 
@@ -316,7 +316,7 @@ namespace FastExpressionKitTests
                 ZeroIfNulls = true,
                 StringNormalizer = (e) =>
                 {
-                    var trim = typeof(string).GetMethod("Trim", new Type[] {});
+                    var trim = typeof(string).GetMethod("Trim", new Type[] { });
                     var call = Expression.Call(e, trim);
                     return call;
                 }
@@ -327,7 +327,7 @@ namespace FastExpressionKitTests
 
             int Compute()
             {
-                var val = h.ComputeHash(o); 
+                var val = h.ComputeHash(o);
                 l.Add(val);
                 return val;
             }
@@ -342,8 +342,8 @@ namespace FastExpressionKitTests
 
             o.s = "notnull";
             Compute();
-            
-            
+
+
             // now it starts giving nonzero
             Check.That(l[0]).IsNotZero();
             o.s = "t";
