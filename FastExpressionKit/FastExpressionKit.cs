@@ -32,10 +32,8 @@ namespace FastExpressionKit
             (exp.Body as MethodCallExpression).Method;
         public static Expression Box(Expression e) => Expression.Convert(e, typeof(object));
         public static Expression NotNull(this MemberExpression left) => Expression.NotEqual(left, Expression.Constant(null));
-
         public static Expression Call(this Expression left, string methodName) => 
             Expression.Call(left, typeof(object).GetMethod(methodName) );
-
     }
 
     public class Differ<T1, T2>
@@ -54,7 +52,7 @@ namespace FastExpressionKit
                     Expression.Call(TupleCreate, EE.Val(f), EE.Box(t2param.Dot(f)))));
             var resultArr = Expression.NewArrayInit(typeof(DifferReturnValueType), cmplist2);
 
-            var l = Expression.Lambda<Func<T1, T2, DifferReturnValueType[] >>(resultArr, t1param, t2param);
+            var l = Expression.Lambda<Func<T1, T2, DifferReturnValueType[]>>(resultArr, t1param, t2param);
             return l.Compile();
         }
 
@@ -71,12 +69,33 @@ namespace FastExpressionKit
     {
         public readonly string[] Props;
         private readonly Action<TTarget, TSrc> assignExpr;
+
         private Action<TTarget, TSrc> CreateExpression(IEnumerable<string> fields)
         {
             var t1param = EE.Param<TTarget>("left");
             var t2param = EE.Param<TSrc>("right");
 
-            var assignList = fields.Select(f => Expression.Assign(t1param.Dot(f), t2param.Dot(f)));
+            var assignList = fields.Select(f =>
+            {
+                var propA = typeof(TTarget).GetProperty(f);
+                var propB = typeof(TSrc).GetProperty(f);
+                if (propA.PropertyType == propB.PropertyType)
+                {
+                    return Expression.Assign(t1param.Dot(f), t2param.Dot(f));
+                }
+                else if (propA.PropertyType == typeof(int) && propB.PropertyType.IsEnum || 
+                         propB.PropertyType == typeof(int) && propA.PropertyType.IsEnum)
+                {
+                    return Expression.Assign(t1param.Dot(f), Expression.Convert(t2param.Dot(f), propA.PropertyType));
+                }
+                else if (Nullable.GetUnderlyingType(propB.PropertyType) == propA.PropertyType ||
+                         Nullable.GetUnderlyingType(propA.PropertyType) == propB.PropertyType)
+                {
+                    return Expression.Assign(t1param.Dot(f), Expression.Convert(t2param.Dot(f), propA.PropertyType));
+                }
+
+                throw new InvalidOperationException($"Invalid operation, cannot copy {propB} to {propA}.");
+            });
             //var resultArr = Expression.NewArrayInit(typeof(bool), cmplist);
             var block = Expression.Block(assignList);
             var l = Expression.Lambda<Action<TTarget, TSrc>>(block, t1param, t2param);
@@ -216,7 +235,7 @@ namespace FastExpressionKit
         // zip {}
         public IEnumerable<Tuple<string, TP>> ResultsAsZip<TP>(ICollection<TP> hits)
         {
-            var r =  Enumerable.Zip(Props, hits, (p,h) => Tuple.Create(p, h));
+            var r = Enumerable.Zip(Props, hits, (p, h) => Tuple.Create(p, h));
             return r;
         }
 
@@ -233,25 +252,31 @@ namespace FastExpressionKit
         }
     }
     // Usable with FieldExtract instances
-    public static class FieldExtractUtil {
+    public static class FieldExtractUtil
+    {
         // emit array of object arrays, usable e.g. for sql bulk copy (one array per extracted property)
-        public static object[][] ExtractToObjectArrays<T1>(FieldExtract<T1, object> extractor, IReadOnlyList<T1> entries) {
+        public static object[][] ExtractToObjectArrays<T1>(FieldExtract<T1, object> extractor, IReadOnlyList<T1> entries)
+        {
             // extract everything to jagged arrays
             // then transpose it
             var ecount = entries.Count;
             var extracted = new object[entries.Count][];
-            for (var i=0; i < entries.Count; i++) {
+            for (var i = 0; i < entries.Count; i++)
+            {
                 extracted[i] = extractor.Extract(entries.ElementAt(i));
 
             }
             object[][] jagged = new object[extractor.Props.Length][];
-            for (var i = 0; i < extractor.Props.Length; i++) {
+            for (var i = 0; i < extractor.Props.Length; i++)
+            {
                 jagged[i] = new object[ecount];
 
             }
 
-            for (var i = 0; i < entries.Count; i++) {
-                for (var j=0; j < extractor.Props.Count(); j++) {
+            for (var i = 0; i < entries.Count; i++)
+            {
+                for (var j = 0; j < extractor.Props.Count(); j++)
+                {
                     jagged[j][i] = extracted[i][j];
                 }
 
@@ -275,7 +300,7 @@ namespace FastExpressionKit
                 .Select(g => Tuple.Create(g.Key, g.Select(pi => pi.Name).ToArray()));
 
         // use after CollectProps
-        public static FieldExtract<T1, T2> GetExtractorFor<T1,T2>(IEnumerable<Tuple<Type, string[]>> propsCollection)
+        public static FieldExtract<T1, T2> GetExtractorFor<T1, T2>(IEnumerable<Tuple<Type, string[]>> propsCollection)
         {
             var proplist = propsCollection.First(el => el.Item1 == typeof(T2));
             if (proplist == null)
