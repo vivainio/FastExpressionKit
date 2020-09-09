@@ -1,6 +1,6 @@
 # FastExpressionKit
 
-[![Build Status](https://dev.azure.com/ville0567/ville/_apis/build/status/vivainio.FastExpressionKit?branchName=master)](https://dev.azure.com/ville0567/ville/_build/latest?definitionId=2&branchName=master)
+![.NET Core](https://github.com/vivainio/FastExpressionKit/workflows/.NET%20Core/badge.svg)
 
 ## A small library to make reflection-y things faster
 

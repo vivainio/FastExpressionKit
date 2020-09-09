@@ -19,10 +19,21 @@ namespace FastExpressionKit
         public static MemberExpression Dot(this Expression exp, string fieldName) => Expression.PropertyOrField(exp, fieldName);
         public static Expression IsEq(this Expression left, Expression right) => Expression.Equal(left, right);
         public static Expression Val<T>(T value) => Expression.Constant(value, typeof(T));
+        
+        public static Expression Mul(this Expression left, int right) => Expression.Multiply(left, Expression.Constant(right));
+        public static Expression MulAssign(this Expression left, int right) => Expression.MultiplyAssign(left, Expression.Constant(right));
+
+        public static Expression Add(this Expression left, int right) => Expression.Add(left, Expression.Constant(right));
+        public static Expression Add(this Expression left, Expression right) => Expression.Add(left, right);
+
+        public static Expression Mul(this Expression left, Expression right) => Expression.Multiply(left, right);
+        public static Expression Let(this Expression left, Expression right) => Expression.Assign(left, right);
         public static MethodInfo Method(Expression<Action> exp) =>
             (exp.Body as MethodCallExpression).Method;
         public static Expression Box(Expression e) => Expression.Convert(e, typeof(object));
-
+        public static Expression NotNull(this MemberExpression left) => Expression.NotEqual(left, Expression.Constant(null));
+        public static Expression Call(this Expression left, string methodName) => 
+            Expression.Call(left, typeof(object).GetMethod(methodName) );
     }
 
     public class Differ<T1, T2>
@@ -100,6 +111,103 @@ namespace FastExpressionKit
         public void Copy(TTarget left, TSrc right) => assignExpr.Invoke(left, right);
     }
 
+    public class FieldHasherOptions
+    {
+        public Func<MemberExpression, Expression> StringNormalizer { get; set; }
+        // early evaluate to zero if any nulls found
+        public bool ZeroIfNulls { get; set; } = false;
+
+    }
+    public class FieldHasher<T1>
+    {
+        public readonly PropertyInfo[] Props;
+    
+        private readonly Func<T1, int> expr;
+
+        private Func<T1, int> CreateExpression(PropertyInfo[] fields, FieldHasherOptions options)
+        {
+            /*
+            $hash = 17;
+            $hash += $hash * 23 + .Call ($obj.a).GetHashCode();
+            $hash += $hash * 23 + .Call ($obj.b).GetHashCode();
+            .If ($obj.s != null) {
+                $hash += $hash * 23 + .Call (.Call ($obj.s).Trim()).GetHashCode()
+            } .Else {
+                $hash *= 23
+            };
+            $hash += $hash * 23 + .Call ($obj.date).GetHashCode();
+            $hash += $hash * 23 + .Call ($obj.mynullable).GetHashCode();
+            $hash
+            */
+            const int prim = 17;
+            const int prim2 = 23;
+            var t1param = EE.Param<T1>("obj");
+            var resultHash = EE.Param<int>("hash");
+            var ass = Expression.Assign(resultHash, Expression.Constant(prim));
+            var block = new List<Expression>();
+            block.Add(ass);
+            var returnLabel = Expression.Label(typeof(int));
+
+            var whenNull = options.ZeroIfNulls ? Expression.Return(returnLabel, Expression.Constant(0)) 
+                : resultHash.MulAssign(prim2);
+
+            block.AddRange(fields.Select(pi =>
+            {
+                var dotted = t1param.Dot(pi.Name);
+                var propType = pi.PropertyType;
+
+                var addAssignHashCode = Expression.AddAssign(resultHash,
+                    resultHash.Mul(prim2).Add(dotted.Call("GetHashCode")));
+                
+                // nullable
+                if (options.ZeroIfNulls && Nullable.GetUnderlyingType(propType) != null)
+                {
+                    return Expression.IfThenElse(
+                        dotted.NotNull(),
+                        addAssignHashCode,
+                        whenNull);
+                }
+                
+                // value type but not nullabl
+                if (propType.IsValueType)
+                {
+                    return (Expression) addAssignHashCode;
+                }
+
+                
+                // normalized string
+                var normalized = propType == typeof(string) && options.StringNormalizer != null
+                    ? options.StringNormalizer(dotted)
+                    : dotted;
+
+                var iffed = Expression.IfThenElse(dotted.NotNull(),
+                    Expression.AddAssign(resultHash,
+                        resultHash.Mul(prim2).Add(normalized.Call("GetHashCode"))),
+                    whenNull);
+                    
+                return iffed;
+            }));
+
+            block.Add(Expression.Label(returnLabel, resultHash));
+            var eblock = Expression.Block(new [] { resultHash} , block);
+            var l = Expression.Lambda<Func<T1, int>>(eblock, t1param);
+            return l.Compile();
+        }
+
+        public FieldHasher(PropertyInfo[] props)
+        {
+            this.Props = props;
+            this.expr = CreateExpression(props, null);
+        }
+        public FieldHasher(PropertyInfo[] props, FieldHasherOptions options)
+        {
+            this.Props = props;
+            this.expr = CreateExpression(props, options);
+        }
+        public int ComputeHash(T1 obj) => unchecked(expr.Invoke(obj));
+
+    }
+    
     public class FieldExtract<T1, TVal>
     {
         public readonly string[] Props;
@@ -181,10 +289,10 @@ namespace FastExpressionKit
         // create cache for GetExtractorFor by reflecting on object
         public static PropertyInfo[] GetProps<T>() => typeof(T)
             .GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
+        public static PropertyInfo[] GetPropsByNames<T>(IEnumerable<string> propNames) =>
+            propNames.Select(i => typeof(T).GetProperty(i)).ToArray();
 
         public static string[] PropNames<T>() => GetProps<T>().Select(p => p.Name).ToArray();
-
         public static string[] WriteablePropNames<T>() => GetProps<T>().Where(p => p.CanWrite).Select(p => p.Name).ToArray();
         public static IEnumerable<Tuple<Type, string[]>> CollectProps<T>() =>
                 GetProps<T>()

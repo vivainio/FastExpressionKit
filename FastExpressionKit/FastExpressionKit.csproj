@@ -10,4 +10,8 @@
     <PackageProjectUrl>https://github.com/vivainio/FastExpressionKit</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/vivainio/FastExpressionKit/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../keypair.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
 </Project>
