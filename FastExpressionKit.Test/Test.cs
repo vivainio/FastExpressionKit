@@ -45,7 +45,7 @@ namespace FastExpressionKitTests
 
         public DateTime? mynullable { get; set; }
         
-        public int? somesimesnullable { get; set; }
+        public int? sometimesnullable { get; set; }
         
     }
 
@@ -391,15 +391,21 @@ namespace FastExpressionKitTests
             Check.That(ins.Properties[1].DbColumnName).Equals("MY_CHANGED_DATE");
         }
 
-        [fCase]
+        [Case]
         public static void TestCopyNullableOverNonnullable()
         {
             var src = new D();
             var dest = new C();
-            var copier = new FieldCopier<D, C>(new[] {"sometimesnullable"});
-            src.somesimesnullable = 12;
-            copier.Copy(src, dest);
-
+            var copier = new FieldCopier<C, D>(new[] {"sometimesnullable"});
+            src.sometimesnullable = null;
+            copier.Copy(dest, src);
+            Check.That(dest.sometimesnullable).Equals(0);
+            src.sometimesnullable = 12;
+            copier.Copy(dest, src);
+            Check.That(dest.sometimesnullable).Equals(12);
+            src.sometimesnullable = null;
+            copier.Copy(dest, src);
+            Check.That(dest.sometimesnullable).Equals(0);
         }
     }
 }

@@ -72,33 +72,43 @@ namespace FastExpressionKit
 
         private Action<TTarget, TSrc> CreateExpression(IEnumerable<string> fields)
         {
-            var t1param = EE.Param<TTarget>("left");
-            var t2param = EE.Param<TSrc>("right");
+            var targetParam = EE.Param<TTarget>("left");
+            var sourceParam = EE.Param<TSrc>("right");
 
-            var assignList = fields.Select(f =>
+            IEnumerable<Expression> assignList = fields.Select(f =>
             {
-                var propA = typeof(TTarget).GetProperty(f);
-                var propB = typeof(TSrc).GetProperty(f);
-                if (propA.PropertyType == propB.PropertyType)
+                var propTarget = typeof(TTarget).GetProperty(f);
+                var propSource = typeof(TSrc).GetProperty(f);
+                if (propTarget.PropertyType == propSource.PropertyType)
                 {
-                    return Expression.Assign(t1param.Dot(f), t2param.Dot(f));
+                    return Expression.Assign(targetParam.Dot(f), sourceParam.Dot(f)) as Expression;
                 }
-                else if (propA.PropertyType == typeof(int) && propB.PropertyType.IsEnum || 
-                         propB.PropertyType == typeof(int) && propA.PropertyType.IsEnum)
+                else if (propTarget.PropertyType == typeof(int) && propSource.PropertyType.IsEnum || 
+                         propSource.PropertyType == typeof(int) && propTarget.PropertyType.IsEnum)
                 {
-                    return Expression.Assign(t1param.Dot(f), Expression.Convert(t2param.Dot(f), propA.PropertyType));
+                    return Expression.Assign(targetParam.Dot(f), Expression.Convert(sourceParam.Dot(f), propTarget.PropertyType));
                 }
-                else if (Nullable.GetUnderlyingType(propB.PropertyType) == propA.PropertyType ||
-                         Nullable.GetUnderlyingType(propA.PropertyType) == propB.PropertyType)
+                // assigning nullable to non-nullable creates prop = default(T)
+                else if (Nullable.GetUnderlyingType(propSource.PropertyType) == propTarget.PropertyType)
                 {
-                    return Expression.Assign(t1param.Dot(f), Expression.Convert(t2param.Dot(f), propA.PropertyType));
+                    var iffed = Expression.IfThenElse(sourceParam.Dot(f).NotNull(),
+                        Expression.Assign(targetParam.Dot(f),
+                            Expression.Convert(sourceParam.Dot(f), propTarget.PropertyType)),
+                        Expression.Assign(targetParam.Dot(f), Expression.Default(propTarget.PropertyType)));
+                    return iffed;
+
+                }
+                // target is nullable, source is not - nothing special, it will never get null
+                else if (Nullable.GetUnderlyingType(propTarget.PropertyType) == propSource.PropertyType)
+                {
+                    return Expression.Assign(targetParam.Dot(f), Expression.Convert(sourceParam.Dot(f), propTarget.PropertyType));
                 }
 
-                throw new InvalidOperationException($"Invalid operation, cannot copy {propB} to {propA}.");
+                throw new InvalidOperationException($"Invalid operation, cannot copy {propSource} to {propTarget}.");
             });
             //var resultArr = Expression.NewArrayInit(typeof(bool), cmplist);
             var block = Expression.Block(assignList);
-            var l = Expression.Lambda<Action<TTarget, TSrc>>(block, t1param, t2param);
+            var l = Expression.Lambda<Action<TTarget, TSrc>>(block, targetParam, sourceParam);
             return l.Compile();
         }
 
