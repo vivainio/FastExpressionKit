@@ -82,6 +82,8 @@ copier.Copy(c1, c2);
 Yes, this is essentially a trivial version of AutoMapper (when you specify the list of fields in the target type).
 The property types must be of the same type, as copying is just doing src.foo = target.foo for each property.
 
+Nullable T? can be assigned on top of non-nullable T with FieldCopier, it coerces nulls to default(T). 
+
 ### Utility classes
 
 The library also contains some helpers for doing reflection (ReflectionHelper) and static helpers for creating
