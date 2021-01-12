@@ -22,9 +22,6 @@ Or use the nuget package:
 $ dotnet add package FastExpressionKit
 ```
 
-
-```
-
 and to refer to the file in your csproj file, add this to `paket.references`:
 
 ```
