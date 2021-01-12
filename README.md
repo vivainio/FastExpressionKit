@@ -16,15 +16,13 @@ Either
 
 - Download FastExpressionKit.cs and add it to your project
 
-Or:
-
-
-- Use Paket `github` dependency. This is handy if you plan to update the version eventually.
-
-Add this to your `paket.dependencies`:
+Or use the nuget package:
 
 ```
-github vivainio/FastExpressionKit FastExpressionKit/FastExpressionKit.cs
+$ dotnet add package FastExpressionKit
+```
+
+
 ```
 
 and to refer to the file in your csproj file, add this to `paket.references`:
