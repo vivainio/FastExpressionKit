@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -217,7 +218,38 @@ namespace FastExpressionKit
         public int ComputeHash(T1 obj) => unchecked(expr.Invoke(obj));
 
     }
-    
+
+    public class ForEachString<T1>
+    {
+        public readonly string[] Props;
+        private readonly Action<T1> expr;
+
+        public ForEachString(IEnumerable<string> fields, MethodInfo methodToCall)
+        {
+            expr = CreateExpression(fields, methodToCall);
+        }
+
+        public void Run(T1 obj)
+        {
+            expr(obj);
+        }
+        private Action<T1> CreateExpression(IEnumerable<string> fields, MethodInfo methodToCall)
+        {
+            var t1param = EE.Param<T1>("obj");
+
+            List<MethodCallExpression> calls = new List<MethodCallExpression>();
+            foreach (var field in fields)
+            {
+                var obj = t1param.Dot(field);
+                var nameConstant = Expression.Constant(field);
+                var call = Expression.Call(methodToCall, nameConstant, obj);
+                calls.Add(call);
+            }
+            var res = Expression.Block(calls);
+            var l = Expression.Lambda<Action<T1>>(res, t1param);
+            return l.Compile();
+        }
+    }
     public class FieldExtract<T1, TVal>
     {
         public readonly string[] Props;

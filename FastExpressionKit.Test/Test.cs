@@ -12,6 +12,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using AutoFixture;
 using FastExpressionKit.BulkInsert;
 using FastExpressionKit.Integration.Tests;
+using FastExpressionKit.Test;
 using NFluent;
 
 namespace FastExpressionKitTests
@@ -57,6 +58,17 @@ namespace FastExpressionKitTests
 
     }
 
+    public class SomeStrings
+    {
+        public string a { get; set; }
+        public string b { get; set; }
+        public string c
+        {
+            get;
+            set;
+        } 
+}
+
     class FastExprKitTest
     {
         static void RepeatBench(string description, int n, Action action)
@@ -71,6 +83,60 @@ namespace FastExpressionKitTests
 
         }
 
+        public static void ValidateString(string key, string value)
+        {
+            char[] badchars = new[] { '\\', '\'', '<', '>', '"', '&' };
+
+            var loc = value.IndexOfAny(badchars);
+            if (loc != -1)
+                throw new ArgumentException($"String contained illegal character '{value[loc]}' at position {loc}");
+
+        }
+
+        [Case]
+        public static void TestTrivialValidator()
+        {
+            TrivialValidator.AddValidator<SomeStrings>(prop => prop.Name != "c");
+            var sut = new SomeStrings()
+            {
+                a = "my a",
+                b = "O'Reilly", // this will raise error
+                c = "the ceeeee"
+            };
+
+            Check.ThatCode(() =>
+            {
+                TrivialValidator.Validate(sut);
+            }).Throws<ArgumentException>();
+            // 2 times should work as well
+            Check.ThatCode(() =>
+            {
+                TrivialValidator.Validate(sut);
+            }).Throws<ArgumentException>();
+
+            
+            TrivialValidator.AddValidator<SomeStrings>( prop => prop.Name != "b");
+            TrivialValidator.Validate(sut); // will not throw
+            
+        }
+        [Case]
+        public static void TestForEach()
+        {
+            var mi = typeof(FastExprKitTest).GetMethod("ValidateString");
+            var fe = new ForEachString<SomeStrings>(new[] { "a", "b", "c" }, mi);
+            var sut = new SomeStrings()
+            {
+                a = "my a",
+                b = "O'Reilly", // this will raise error
+                c = "the ceeeee"
+            };
+            Check.ThatCode(() =>
+            {
+                fe.Run(sut);
+            }).Throws<ArgumentException>();
+            sut.b = "Nondangerous string";
+            fe.Run(sut); // does not throw
+        }
         [Case]
         public static void Benchmark()
         {
