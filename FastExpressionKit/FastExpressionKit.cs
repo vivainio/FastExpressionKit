@@ -219,30 +219,39 @@ namespace FastExpressionKit
 
     }
 
-    public class ForEachString<T1>
+    /// <summary>
+    /// Run some static method for each property in the list
+    ///
+    /// Not quite typesafe. All the properties listed should be of same type
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    public class RunMethodForEachProperty<T1, TExtra>
     {
         public readonly string[] Props;
         private readonly Action<T1> expr;
 
-        public ForEachString(IEnumerable<string> fields, MethodInfo methodToCall)
+        public RunMethodForEachProperty(IEnumerable<string> fields, MethodInfo methodToCall, TExtra extraParam)
         {
-            expr = CreateExpression(fields, methodToCall);
+            expr = CreateExpression(fields, methodToCall, extraParam);
         }
 
         public void Run(T1 obj)
         {
             expr(obj);
         }
-        private Action<T1> CreateExpression(IEnumerable<string> fields, MethodInfo methodToCall)
+        private Action<T1> CreateExpression(IEnumerable<string> fields, MethodInfo methodToCall, TExtra extraParam)
         {
             var t1param = EE.Param<T1>("obj");
 
             List<MethodCallExpression> calls = new List<MethodCallExpression>();
             foreach (var field in fields)
             {
-                var obj = t1param.Dot(field);
+                // the call will always be with (type, key, value, EXTRA)
+                var value = t1param.Dot(field);
                 var nameConstant = Expression.Constant(field);
-                var call = Expression.Call(methodToCall, nameConstant, obj);
+                var typeArg = Expression.Constant(typeof(T1));
+                var extraConstant = Expression.Constant(extraParam);
+                var call = Expression.Call(methodToCall, typeArg, nameConstant, value, extraConstant);
                 calls.Add(call);
             }
             var res = Expression.Block(calls);

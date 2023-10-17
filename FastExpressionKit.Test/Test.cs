@@ -67,7 +67,15 @@ namespace FastExpressionKitTests
             get;
             set;
         } 
-}
+        public int surpriseinteger { get; set; }
+    }
+
+    public class SomeDecimals
+    {
+        public decimal a { get; set; }
+        public decimal b { get; set; }
+        public decimal? cnullable { get; set; }
+    }
 
     class FastExprKitTest
     {
@@ -83,20 +91,26 @@ namespace FastExpressionKitTests
 
         }
 
-        public static void ValidateString(string key, string value)
+        public static void ValidateString(Type t, string key, string value, char[] badChars)
         {
-            char[] badchars = new[] { '\\', '\'', '<', '>', '"', '&' };
-
-            var loc = value.IndexOfAny(badchars);
+            var loc = value.IndexOfAny(badChars);
             if (loc != -1)
-                throw new ArgumentException($"String contained illegal character '{value[loc]}' at position {loc}");
+                throw new ValidationError($"Type {t} Prop {key}, String contained illegal character '{value[loc]}' at position {loc}");
+        }
 
+        public static void ValidateDecimal(Type t, string key, decimal value, bool extra)
+        {
+            
+            if (value < 0)
+                throw new ValidationError($"Type {t} Property {key} was negative: {value}");
         }
 
         [Case]
         public static void TestTrivialValidator()
         {
-            TrivialValidator.AddValidator<SomeStrings>(prop => prop.Name != "c");
+            TrivialValidator.SetValidator<SomeStrings>(prop => 
+                prop.PropertyType == typeof(string)
+                && prop.Name != "c", TrivialValidator.BadCharacters);
             var sut = new SomeStrings()
             {
                 a = "my a",
@@ -107,23 +121,29 @@ namespace FastExpressionKitTests
             Check.ThatCode(() =>
             {
                 TrivialValidator.Validate(sut);
-            }).Throws<ArgumentException>();
+            }).Throws<ValidationError>();
             // 2 times should work as well
             Check.ThatCode(() =>
             {
                 TrivialValidator.Validate(sut);
-            }).Throws<ArgumentException>();
+            }).Throws<ValidationError>();
+
+            Check.ThatCode(() =>
+            {
+                TrivialValidator.ValidateMany(new[] { sut, sut });
+            }).Throws<ValidationError>();
 
             
-            TrivialValidator.AddValidator<SomeStrings>( prop => prop.Name != "b");
+            TrivialValidator.SetValidator<SomeStrings>( prop => prop.Name != "b",
+                TrivialValidator.BadCharacters,
+                overwrite: true);
             TrivialValidator.Validate(sut); // will not throw
-            
         }
         [Case]
         public static void TestForEach()
         {
             var mi = typeof(FastExprKitTest).GetMethod("ValidateString");
-            var fe = new ForEachString<SomeStrings>(new[] { "a", "b", "c" }, mi);
+            var fe = new RunMethodForEachProperty<SomeStrings, char[]>(new[] { "a", "b", "c" }, mi, TrivialValidator.BadCharacters);
             var sut = new SomeStrings()
             {
                 a = "my a",
@@ -133,9 +153,24 @@ namespace FastExpressionKitTests
             Check.ThatCode(() =>
             {
                 fe.Run(sut);
-            }).Throws<ArgumentException>();
+            }).Throws<ValidationError>();
             sut.b = "Nondangerous string";
             fe.Run(sut); // does not throw
+            
+            var decimalChecker = new RunMethodForEachProperty<SomeDecimals, bool>(new[] { "a", "b" }, 
+                typeof(FastExprKitTest).GetMethod(nameof(ValidateDecimal)), true);
+
+            var dd = new SomeDecimals
+            {
+                a = 12,
+                b = -2,
+                cnullable = 3
+            };
+            Check.ThatCode(() =>
+            {
+                decimalChecker.Run(dd);
+            }).Throws<ValidationError>();
+
         }
         [Case]
         public static void Benchmark()
@@ -298,8 +333,6 @@ namespace FastExpressionKitTests
             catch (InvalidOperationException)
             {
             }
-
-            ;
 
             var ee = new FieldExtract<C, DateTime?>(new[] { "mynullable" });
             var r = ee.Extract(c1);
